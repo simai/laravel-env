@@ -9,6 +9,45 @@ declare -Ag CMD_DESCRIPTIONS=()
 declare -Ag CMD_REQUIRED=()
 declare -Ag CMD_OPTIONAL=()
 
+select_from_list() {
+  local prompt="$1"
+  local default="${2:-}"
+  shift 2
+  local options=("$@")
+  if [[ ${#options[@]} -eq 0 ]]; then
+    echo ""
+    return 1
+  fi
+  echo "$prompt"
+  local i=1
+  for opt in "${options[@]}"; do
+    echo "  [$i] $opt"
+    ((i++))
+  done
+  if [[ -n "$default" ]]; then
+    read -r -p "Enter choice [${default}]: " choice || true
+    [[ -z "$choice" ]] && choice="$default"
+  else
+    read -r -p "Enter choice: " choice || true
+  fi
+  if [[ "$choice" =~ ^[0-9]+$ ]]; then
+    local idx=$((choice-1))
+    if [[ $idx -ge 0 && $idx -lt ${#options[@]} ]]; then
+      echo "${options[$idx]}"
+      return 0
+    fi
+  fi
+  # fallback: if choice matches an option exactly, accept
+  for opt in "${options[@]}"; do
+    if [[ "$choice" == "$opt" ]]; then
+      echo "$choice"
+      return 0
+    fi
+  done
+  echo ""
+  return 1
+}
+
 log() {
   local level="$1"; shift
   local msg="$*"

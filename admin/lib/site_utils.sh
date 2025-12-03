@@ -44,6 +44,16 @@ resolve_php_bin() {
   echo "$php_bin"
 }
 
+installed_php_versions() {
+  local versions=()
+  shopt -s nullglob
+  for d in /etc/php/*; do
+    [[ -d "$d" ]] && versions+=("$(basename "$d")")
+  done
+  shopt -u nullglob
+  printf "%s\n" "${versions[@]}"
+}
+
 create_php_pool() {
   local project="$1" php_version="$2" project_path="$3"
   local pool_dir="/etc/php/${php_version}/fpm/pool.d"

@@ -7,8 +7,8 @@ site_add_handler() {
 
   local domain="${PARSED_ARGS[domain]}"
   local project="${PARSED_ARGS[project-name]:-}"
-  local profile="${PARSED_ARGS[profile]:-laravel}"
-  local php_version="${PARSED_ARGS[php]:-8.2}"
+  local profile="${PARSED_ARGS[profile]:-}"
+  local php_version="${PARSED_ARGS[php]:-}"
   if [[ -z "$project" ]]; then
     project=$(project_slug_from_domain "$domain")
     info "project-name not provided; using ${project}"
@@ -21,6 +21,21 @@ site_add_handler() {
     mkdir -p "$path"
   fi
   local template_path="$NGINX_TEMPLATE"
+  if [[ -z "$profile" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
+    profile=$(select_from_list "Select profile" "laravel" "laravel" "generic")
+    [[ -z "$profile" ]] && profile="laravel"
+  fi
+  [[ -z "$profile" ]] && profile="laravel"
+
+  if [[ -z "$php_version" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
+    local versions=()
+    mapfile -t versions < <(installed_php_versions)
+    if [[ ${#versions[@]} -gt 0 ]]; then
+      php_version=$(select_from_list "Select PHP version" "${versions[0]}" "${versions[@]}")
+    fi
+  fi
+  [[ -z "$php_version" ]] && php_version="8.2"
+
   if [[ "$profile" == "generic" ]]; then
     template_path="$NGINX_TEMPLATE_GENERIC"
     create_placeholder_if_missing "$path"
@@ -39,10 +54,16 @@ site_add_handler() {
 
 site_remove_handler() {
   parse_kv_args "$@"
-  require_args "domain"
-
-  local domain="${PARSED_ARGS[domain]}"
+  local domain="${PARSED_ARGS[domain]:-}"
   local project="${PARSED_ARGS[project-name]:-}"
+  if [[ -z "$domain" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
+    local sites=()
+    mapfile -t sites < <(list_sites)
+    domain=$(select_from_list "Select domain to remove" "" "${sites[@]}")
+  fi
+  if [[ -z "$domain" ]]; then
+    require_args "domain"
+  fi
   if [[ -z "$project" ]]; then
     project=$(project_slug_from_domain "$domain")
     info "project-name not provided; using ${project}"

@@ -3,13 +3,7 @@ set -euo pipefail
 
 php_list_handler() {
   local versions=()
-  shopt -s nullglob
-  for d in /etc/php/*; do
-    [[ -d "$d" ]] || continue
-    versions+=("$(basename "$d")")
-  done
-  shopt -u nullglob
-
+  mapfile -t versions < <(installed_php_versions)
   if [[ ${#versions[@]} -eq 0 ]]; then
     info "No PHP versions found under /etc/php"
     return
@@ -26,8 +20,16 @@ php_list_handler() {
 
 php_reload_handler() {
   parse_kv_args "$@"
-  require_args "php"
-  local php_version="${PARSED_ARGS[php]}"
+  local php_version="${PARSED_ARGS[php]:-}"
+  if [[ -z "$php_version" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
+    local versions=()
+    mapfile -t versions < <(installed_php_versions)
+    php_version=$(select_from_list "Select PHP version to reload" "" "${versions[@]}")
+  fi
+  if [[ -z "$php_version" ]]; then
+    require_args "php"
+  fi
+  [[ -z "$php_version" ]] && return 1
   local svc="php${php_version}-fpm"
   info "Reloading ${svc}"
   systemctl reload "$svc" || systemctl restart "$svc"
