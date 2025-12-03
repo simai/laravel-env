@@ -101,3 +101,40 @@ require_laravel_structure() {
     return 1
   fi
 }
+
+remove_nginx_site() {
+  local domain="$1"
+  local site_available="/etc/nginx/sites-available/${domain}.conf"
+  local site_enabled="/etc/nginx/sites-enabled/${domain}.conf"
+  rm -f "$site_enabled" "$site_available"
+  if command -v nginx >/dev/null 2>&1; then
+    nginx -t >>"$LOG_FILE" 2>&1 || warn "nginx test failed after removing ${domain}"
+    systemctl reload nginx >>"$LOG_FILE" 2>&1 || true
+  fi
+}
+
+remove_php_pools() {
+  local project="$1"
+  shopt -s nullglob
+  local pools=(/etc/php/*/fpm/pool.d/${project}.conf)
+  local versions=()
+  for pool in "${pools[@]:-}"; do
+    rm -f "$pool"
+    local ver
+    ver=$(echo "$pool" | awk -F'/' '{print $4}')
+    versions+=("$ver")
+  done
+  shopt -u nullglob
+  for v in $(printf "%s\n" "${versions[@]}" | sort -u); do
+    systemctl reload "php${v}-fpm" >>"$LOG_FILE" 2>&1 || systemctl restart "php${v}-fpm" >>"$LOG_FILE" 2>&1 || true
+  done
+}
+
+remove_project_files() {
+  local path="$1"
+  if [[ -z "$path" || "$path" == "/" ]]; then
+    warn "Skip removing dangerous path: ${path:-<empty>}"
+    return
+  fi
+  rm -rf "$path"
+}

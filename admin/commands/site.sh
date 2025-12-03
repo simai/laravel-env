@@ -44,9 +44,23 @@ site_remove_handler() {
   local remove_files="${PARSED_ARGS[remove-files]:-0}"
   local drop_db="${PARSED_ARGS[drop-db]:-0}"
   local drop_user="${PARSED_ARGS[drop-db-user]:-0}"
+  local db_name="${PARSED_ARGS[db-name]:-simai_${project}}"
+  local db_user="${PARSED_ARGS[db-user]:-simai}"
 
-  info "Site remove (stub): domain=${domain}, project=${project}, path=${path}, remove_files=${remove_files}, drop_db=${drop_db}, drop_user=${drop_user}"
-  info "TODO: remove nginx/php-fpm/cron/queue resources and optional files/db."
+  info "Removing site: domain=${domain}, project=${project}, path=${path}"
+  remove_nginx_site "$domain"
+  remove_php_pools "$project"
+  # TODO: remove cron/queue resources when implemented
+  if [[ "$remove_files" == "1" ]]; then
+    remove_project_files "$path"
+  fi
+  if [[ "$drop_db" == "1" ]]; then
+    mysql -uroot -e "DROP DATABASE IF EXISTS \`${db_name}\`;" >>"$LOG_FILE" 2>&1 || warn "Failed to drop database ${db_name}"
+  fi
+  if [[ "$drop_user" == "1" ]]; then
+    mysql -uroot -e "DROP USER IF EXISTS '${db_user}'@'%';" >>"$LOG_FILE" 2>&1 || warn "Failed to drop user ${db_user}"
+  fi
+  info "Site remove completed for ${domain}"
 }
 
 site_set_php_handler() {
@@ -66,6 +80,6 @@ site_list_handler() {
 }
 
 register_cmd "site" "add" "Create site scaffolding (nginx/php-fpm)" "site_add_handler" "domain" "project-name= path= php=8.2"
-register_cmd "site" "remove" "Remove site resources" "site_remove_handler" "domain" "project-name= path= remove-files=0 drop-db=0 drop-db-user=0"
+register_cmd "site" "remove" "Remove site resources" "site_remove_handler" "domain" "project-name= path= remove-files=0 drop-db=0 drop-db-user=0 db-name= db-user="
 register_cmd "site" "set-php" "Switch PHP version for site" "site_set_php_handler" "project-name php" ""
 register_cmd "site" "list" "List configured sites" "site_list_handler" "" ""
