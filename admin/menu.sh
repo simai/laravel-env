@@ -80,10 +80,12 @@ run_menu() {
         args+=("--$key" "$val")
       done
 
+      echo "---- running ${section} ${cmd} ----"
       set +e
       run_command "$section" "$cmd" "${args[@]}"
       rc=$?
       set -e
+      echo "---- done (${section} ${cmd}), exit=${rc} ----"
       if [[ $rc -ne 0 ]]; then
         warn "Command failed with exit code ${rc}"
       fi
