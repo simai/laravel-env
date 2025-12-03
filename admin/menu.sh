@@ -36,49 +36,51 @@ run_menu() {
       continue
     fi
 
-    echo
-    echo "Section: $section"
-    local commands=()
-    idx=1
-    while IFS= read -r c; do
-      commands+=("$c")
-      echo "  [$idx] $c - $(get_command_desc "$section" "$c")"
-      ((idx++))
-    done < <(list_commands_for_section "$section")
-    echo "  [0] Back"
-    read -r -p "Enter choice: " cchoice || true
-    if [[ "$cchoice" == "0" || -z "$cchoice" ]]; then
-      continue
-    fi
-    local cmd="${commands[$((cchoice-1))]:-}"
-    if [[ -z "$cmd" ]]; then
-      echo "Invalid choice"
-      continue
-    fi
-
-    local req opts
-    req="$(get_required_opts "$section" "$cmd")"
-    opts="$(get_optional_opts "$section" "$cmd")"
-    local args=()
-
-    for key in $req; do
-      local value
-      value=$(prompt "$key")
-      args+=("--$key" "$value")
-    done
-
-    for pair in $opts; do
-      local key="${pair%%=*}"
-      local def="${pair#*=}"
-      # if default is empty, skip prompting (handler may derive a value)
-      if [[ -z "$def" ]]; then
+    while true; do
+      echo
+      echo "Section: $section"
+      local commands=()
+      idx=1
+      while IFS= read -r c; do
+        commands+=("$c")
+        echo "  [$idx] $c - $(get_command_desc "$section" "$c")"
+        ((idx++))
+      done < <(list_commands_for_section "$section")
+      echo "  [0] Back"
+      read -r -p "Enter choice: " cchoice || true
+      if [[ "$cchoice" == "0" || -z "$cchoice" ]]; then
+        break
+      fi
+      local cmd="${commands[$((cchoice-1))]:-}"
+      if [[ -z "$cmd" ]]; then
+        echo "Invalid choice"
         continue
       fi
-      local val
-      val=$(prompt "$key" "$def")
-      args+=("--$key" "$val")
-    done
 
-    run_command "$section" "$cmd" "${args[@]}"
+      local req opts
+      req="$(get_required_opts "$section" "$cmd")"
+      opts="$(get_optional_opts "$section" "$cmd")"
+      local args=()
+
+      for key in $req; do
+        local value
+        value=$(prompt "$key")
+        args+=("--$key" "$value")
+      done
+
+      for pair in $opts; do
+        local key="${pair%%=*}"
+        local def="${pair#*=}"
+        # if default is empty, skip prompting (handler may derive a value)
+        if [[ -z "$def" ]]; then
+          continue
+        fi
+        local val
+        val=$(prompt "$key" "$def")
+        args+=("--$key" "$val")
+      done
+
+      run_command "$section" "$cmd" "${args[@]}"
+    done
   done
 }
