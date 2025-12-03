@@ -70,6 +70,10 @@ run_menu() {
     for pair in $opts; do
       local key="${pair%%=*}"
       local def="${pair#*=}"
+      # if default is empty, skip prompting (handler may derive a value)
+      if [[ -z "$def" ]]; then
+        continue
+      fi
       local val
       val=$(prompt "$key" "$def")
       args+=("--$key" "$val")
