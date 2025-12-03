@@ -39,6 +39,25 @@ curl -fsSL https://raw.githubusercontent.com/simai/laravel-env/main/install.sh |
   REF=refs/tags/v1.0.0 sudo -E bash
 ```
 
+## Admin CLI (maintenance)
+`simai-admin.sh` provides a pluggable command framework and a simple menu wrapper.
+
+- Direct commands:
+```bash
+sudo /root/simai-env/simai-admin.sh site add --domain example.com --project-name myapp --php 8.2
+sudo /root/simai-env/simai-admin.sh db create --name simai_app --user simai --pass secret
+sudo /root/simai-env/simai-admin.sh ssl issue --domain example.com --email admin@example.com
+```
+- Interactive menu:
+```bash
+sudo /root/simai-env/simai-admin.sh menu
+```
+
+Implemented:
+- `site add` — creates PHP-FPM pool and nginx vhost for an existing Laravel project path.
+
+Other commands remain as scaffolding stubs; extend `admin/commands/*.sh` to implement them. The registry-based design allows adding sections/commands by registering them in new modules.
+
 ### New project (mode A)
 ```bash
 ./simai-env.sh --domain example.com --project-name myapp \
