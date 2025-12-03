@@ -39,6 +39,12 @@ curl -fsSL https://raw.githubusercontent.com/simai/laravel-env/main/install.sh |
   REF=refs/tags/v1.0.0 sudo -E bash
 ```
 
+### Update scripts only
+Refresh to the latest main (or set `REF`/`VERSION`):
+```bash
+curl -fsSL https://raw.githubusercontent.com/simai/laravel-env/main/update.sh | sudo bash
+```
+
 ## Admin CLI (maintenance)
 `simai-admin.sh` provides a pluggable command framework and a simple menu wrapper.
 
