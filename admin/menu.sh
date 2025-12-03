@@ -14,6 +14,7 @@ prompt() {
 }
 
 run_menu() {
+  export SIMAI_ADMIN_MENU=1
   while true; do
     echo
     echo "Select section:"
