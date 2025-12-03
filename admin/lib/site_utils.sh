@@ -4,6 +4,7 @@ set -euo pipefail
 SIMAI_USER=${SIMAI_USER:-simai}
 WWW_ROOT=${WWW_ROOT:-/home/${SIMAI_USER}/www}
 NGINX_TEMPLATE=${NGINX_TEMPLATE:-${SCRIPT_DIR}/templates/nginx-laravel.conf}
+NGINX_TEMPLATE_GENERIC=${NGINX_TEMPLATE_GENERIC:-${SCRIPT_DIR}/templates/nginx-generic.conf}
 
 project_slug_from_domain() {
   local domain="$1"
@@ -67,9 +68,9 @@ EOF
 }
 
 create_nginx_site() {
-  local domain="$1" project="$2" project_path="$3" php_version="$4"
-  if [[ ! -f "$NGINX_TEMPLATE" ]]; then
-    error "nginx template not found at ${NGINX_TEMPLATE}"
+  local domain="$1" project="$2" project_path="$3" php_version="$4" template_path="${5:-$NGINX_TEMPLATE}"
+  if [[ ! -f "$template_path" ]]; then
+    error "nginx template not found at ${template_path}"
     exit 1
   fi
   local site_available="/etc/nginx/sites-available/${domain}.conf"
@@ -77,7 +78,7 @@ create_nginx_site() {
   sed -e "s#{{SERVER_NAME}}#${domain}#g" \
       -e "s#{{PROJECT_ROOT}}#${project_path}#g" \
       -e "s#{{PROJECT_NAME}}#${project}#g" \
-      -e "s#{{PHP_VERSION}}#${php_version}#g" "$NGINX_TEMPLATE" > "$site_available"
+      -e "s#{{PHP_VERSION}}#${php_version}#g" "$template_path" > "$site_available"
   ln -sf "$site_available" "$site_enabled"
   if [[ -f /etc/nginx/sites-enabled/default ]]; then
     rm -f /etc/nginx/sites-enabled/default
@@ -100,6 +101,21 @@ require_laravel_structure() {
     error "artisan not found in ${project_path}; is this a Laravel project?"
     return 1
   fi
+}
+
+create_placeholder_if_missing() {
+  local project_path="$1"
+  local index_php="${project_path}/index.php"
+  local public_index="${project_path}/public/index.php"
+  if [[ -f "$index_php" || -f "$public_index" ]]; then
+    return
+  fi
+  mkdir -p "${project_path}/public"
+  cat >"$public_index" <<'EOF'
+<?php
+http_response_code(200);
+echo "Placeholder: site is configured.";
+EOF
 }
 
 remove_nginx_site() {

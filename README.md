@@ -66,6 +66,7 @@ sudo /root/simai-env/simai-admin.sh self update
 
 Implemented:
 - `site add` — creates PHP-FPM pool and nginx vhost for an existing Laravel project path. If `--project-name` is omitted, it is derived from the domain (dots replaced with hyphens).
+- `site add --profile generic` — uses a generic nginx template and creates a placeholder if no Laravel structure is present.
 - `php list` — shows installed PHP versions and FPM status.
 
 Other commands remain as scaffolding stubs; extend `admin/commands/*.sh` to implement them. The registry-based design allows adding sections/commands by registering them in new modules.

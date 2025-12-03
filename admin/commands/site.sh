@@ -7,6 +7,7 @@ site_add_handler() {
 
   local domain="${PARSED_ARGS[domain]}"
   local project="${PARSED_ARGS[project-name]:-}"
+  local profile="${PARSED_ARGS[profile]:-laravel}"
   local php_version="${PARSED_ARGS[php]:-8.2}"
   if [[ -z "$project" ]]; then
     project=$(project_slug_from_domain "$domain")
@@ -19,15 +20,21 @@ site_add_handler() {
     info "Project path not found, creating: $path"
     mkdir -p "$path"
   fi
-  if ! require_laravel_structure "$path"; then
-    return 1
+  local template_path="$NGINX_TEMPLATE"
+  if [[ "$profile" == "generic" ]]; then
+    template_path="$NGINX_TEMPLATE_GENERIC"
+    create_placeholder_if_missing "$path"
+  else
+    if ! require_laravel_structure "$path"; then
+      return 1
+    fi
   fi
   ensure_project_permissions "$path"
 
   create_php_pool "$project" "$php_version" "$path"
-  create_nginx_site "$domain" "$project" "$path" "$php_version"
+  create_nginx_site "$domain" "$project" "$path" "$php_version" "$template_path"
 
-  info "Site added: domain=${domain}, project=${project}, path=${path}, php=${php_version}"
+  info "Site added: domain=${domain}, project=${project}, path=${path}, php=${php_version}, profile=${profile}"
 }
 
 site_remove_handler() {
@@ -79,7 +86,7 @@ site_list_handler() {
   list_sites
 }
 
-register_cmd "site" "add" "Create site scaffolding (nginx/php-fpm)" "site_add_handler" "domain" "project-name= path= php=8.2"
+register_cmd "site" "add" "Create site scaffolding (nginx/php-fpm)" "site_add_handler" "domain" "project-name= path= php=8.2 profile=laravel"
 register_cmd "site" "remove" "Remove site resources" "site_remove_handler" "domain" "project-name= path= remove-files=0 drop-db=0 drop-db-user=0 db-name= db-user="
 register_cmd "site" "set-php" "Switch PHP version for site" "site_set_php_handler" "project-name php" ""
 register_cmd "site" "list" "List configured sites" "site_list_handler" "" ""
