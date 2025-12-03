@@ -1,0 +1,18 @@
+[Unit]
+Description=Laravel Queue Worker for {{PROJECT_NAME}}
+After=network.target mysql.service mariadb.service redis-server.service
+
+[Service]
+Type=simple
+User={{USER}}
+Group=www-data
+WorkingDirectory={{PROJECT_ROOT}}
+ExecStart={{PHP_BIN}} {{PROJECT_ROOT}}/artisan queue:work --tries=3 --sleep=3
+Restart=always
+RestartSec=5
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=laravel-queue-{{PROJECT_NAME}}
+
+[Install]
+WantedBy=multi-user.target
