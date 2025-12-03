@@ -96,6 +96,6 @@ require_laravel_structure() {
   local project_path="$1"
   if [[ ! -f "$project_path/artisan" ]]; then
     error "artisan not found in ${project_path}; is this a Laravel project?"
-    exit 1
+    return 1
   fi
 }

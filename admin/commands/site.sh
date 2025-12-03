@@ -30,15 +30,20 @@ site_add_handler() {
 
 site_remove_handler() {
   parse_kv_args "$@"
-  require_args "domain project-name"
+  require_args "domain"
 
   local domain="${PARSED_ARGS[domain]}"
-  local project="${PARSED_ARGS[project-name]}"
+  local project="${PARSED_ARGS[project-name]:-}"
+  if [[ -z "$project" ]]; then
+    project=$(project_slug_from_domain "$domain")
+    info "project-name not provided; using ${project}"
+  fi
+  local path="${PARSED_ARGS[path]:-${WWW_ROOT}/${project}}"
   local remove_files="${PARSED_ARGS[remove-files]:-0}"
   local drop_db="${PARSED_ARGS[drop-db]:-0}"
   local drop_user="${PARSED_ARGS[drop-db-user]:-0}"
 
-  info "Site remove (stub): domain=${domain}, project=${project}, remove_files=${remove_files}, drop_db=${drop_db}, drop_user=${drop_user}"
+  info "Site remove (stub): domain=${domain}, project=${project}, path=${path}, remove_files=${remove_files}, drop_db=${drop_db}, drop_user=${drop_user}"
   info "TODO: remove nginx/php-fpm/cron/queue resources and optional files/db."
 }
 
@@ -59,6 +64,6 @@ site_list_handler() {
 }
 
 register_cmd "site" "add" "Create site scaffolding (nginx/php-fpm)" "site_add_handler" "domain" "project-name= path= php=8.2"
-register_cmd "site" "remove" "Remove site resources" "site_remove_handler" "domain project-name" "remove-files=0 drop-db=0 drop-db-user=0"
+register_cmd "site" "remove" "Remove site resources" "site_remove_handler" "domain" "project-name= path= remove-files=0 drop-db=0 drop-db-user=0"
 register_cmd "site" "set-php" "Switch PHP version for site" "site_set_php_handler" "project-name php" ""
 register_cmd "site" "list" "List configured sites" "site_list_handler" "" ""
