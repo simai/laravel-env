@@ -20,7 +20,12 @@
 ## Usage (run as root)
 
 ### Quick install
-Download and unpack the latest version to `/root/simai-env`, then run the installer:
+- One-liner (default path `/root/simai-env`):
+```bash
+curl -fsSL https://raw.githubusercontent.com/simai/laravel-env/main/install.sh | sudo bash && \
+sudo /root/simai-env/simai-env.sh --domain example.com --project-name myapp --db-pass secret --php 8.2 --run-migrations --optimize
+```
+- Two-step variant:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/simai/laravel-env/main/install.sh | sudo bash
 sudo /root/simai-env/simai-env.sh --domain example.com --project-name myapp --db-pass secret
