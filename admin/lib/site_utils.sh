@@ -13,6 +13,16 @@ project_slug_from_domain() {
   echo "$slug"
 }
 
+list_sites() {
+  shopt -s nullglob
+  for cfg in /etc/nginx/sites-available/*.conf; do
+    local name
+    name=$(basename "$cfg" .conf)
+    echo "$name"
+  done | sort
+  shopt -u nullglob
+}
+
 ensure_user() {
   if ! id -u "$SIMAI_USER" >/dev/null 2>&1; then
     info "Creating user ${SIMAI_USER}"

@@ -53,6 +53,12 @@ site_set_php_handler() {
   info "TODO: update PHP-FPM pool and nginx upstream."
 }
 
+site_list_handler() {
+  info "Sites (nginx sites-available):"
+  list_sites
+}
+
 register_cmd "site" "add" "Create site scaffolding (nginx/php-fpm)" "site_add_handler" "domain" "project-name= path= php=8.2"
 register_cmd "site" "remove" "Remove site resources" "site_remove_handler" "domain project-name" "remove-files=0 drop-db=0 drop-db-user=0"
 register_cmd "site" "set-php" "Switch PHP version for site" "site_set_php_handler" "project-name php" ""
+register_cmd "site" "list" "List configured sites" "site_list_handler" "" ""
