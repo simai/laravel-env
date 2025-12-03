@@ -58,6 +58,10 @@ sudo /root/simai-env/simai-admin.sh ssl issue --domain example.com --email admin
 ```bash
 sudo /root/simai-env/simai-admin.sh menu
 ```
+- Self-update via admin CLI:
+```bash
+sudo /root/simai-env/simai-admin.sh self update
+```
 
 Implemented:
 - `site add` — creates PHP-FPM pool and nginx vhost for an existing Laravel project path. If `--project-name` is omitted, it is derived from the domain (dots replaced with hyphens).
