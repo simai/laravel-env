@@ -40,6 +40,16 @@
 - Avoid non-ASCII in code; keep output concise; log to `/var/log/simai-env.log` or `/var/log/simai-admin.log`.
 - Do not remove user changes; do not hardcode destructive commands.
 
+## Security defaults
+- Least privilege: run sites as `simai`, separate PHP-FPM pool per project, sockets/logs owned by `simai`:www-data, no root for web/PHP.
+- Secrets never logged: show creds once to user, do not write passwords/keys to logs; keep `.env` at 640.
+- Nginx safety: always keep catch-all `default_server` returning 444; disable distro default site; do not expose internal endpoints (PHP status/healthcheck) publicly.
+- PHP-FPM: per-project sockets, sensible timeouts, no exec-like features in templates.
+- DB: one DB user per site, generated password by default; avoid shared root accounts; host `%` only when explicitly needed.
+- Input validation: sanitize domains/paths (no `..`, only a-z0-9.-_), reject unexpected values; build shell commands without user interpolation.
+- SSL: issue/renew only for domains from configs; do not overwrite unrelated vhosts.
+- Cleanup/update: site removal deletes nginx/pools first, files/DB/user only on explicit confirmation; updater may delete deprecated scripts but must not touch user data.
+
 ## Pending/known gaps
 - Some admin commands are stubs (ssl, db, queue, cron beyond schedule:run, site set-php logic).
 - Healthcheck relies on `.env` for DB; generic profile now writes it when DB is created.
