@@ -1,7 +1,7 @@
 # simai-env Copilot Instructions
 
 ## Project scope
-- Ubuntu-only installer and admin CLI for Laravel and generic PHP sites.
+- Ubuntu-only installer and admin CLI for PHP sites (Laravel optional profile, generic by default).
 - Supported OS: Ubuntu 20.04/22.04/24.04 only.
 - Default user: `simai`; projects live under `/home/simai/www/<project>/`.
 - Services: nginx, PHP-FPM (8.1/8.2/8.3 via `ppa:ondrej/php`), MySQL/Percona, Redis, Node.js, Composer.

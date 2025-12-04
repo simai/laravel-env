@@ -1,6 +1,6 @@
 # simai-env
 
-`simai-env.sh` is a lightweight installer for Laravel projects on Ubuntu 20.04/22.04/24.04. It provisions the full stack, configures a project, and supports cleanup mode — with no extra dependencies.
+`simai-env.sh` is a lightweight installer for PHP projects (Laravel optional; generic default) on Ubuntu 20.04/22.04/24.04. It provisions the full stack, configures a project, and supports cleanup mode — with no extra dependencies.
 
 ## What it installs
 - nginx

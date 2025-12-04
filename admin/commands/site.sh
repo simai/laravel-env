@@ -26,10 +26,10 @@ site_add_handler() {
   fi
   local template_path="$NGINX_TEMPLATE"
   if [[ -z "$profile" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
-    profile=$(select_from_list "Select profile" "laravel" "laravel" "generic")
-    [[ -z "$profile" ]] && profile="laravel"
+    profile=$(select_from_list "Select profile" "generic" "generic" "laravel")
+    [[ -z "$profile" ]] && profile="generic"
   fi
-  [[ -z "$profile" ]] && profile="laravel"
+  [[ -z "$profile" ]] && profile="generic"
 
   if [[ -z "$php_version" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
     local versions=()
@@ -192,7 +192,7 @@ site_list_handler() {
   list_sites
 }
 
-register_cmd "site" "add" "Create site scaffolding (nginx/php-fpm)" "site_add_handler" "domain" "project-name= path= php= profile= create-db= db-name= db-user= db-pass="
+register_cmd "site" "add" "Create site scaffolding (nginx/php-fpm)" "site_add_handler" "domain" "project-name= path= php= profile=generic create-db= db-name= db-user= db-pass="
 register_cmd "site" "remove" "Remove site resources" "site_remove_handler" "" ""
 register_cmd "site" "set-php" "Switch PHP version for site" "site_set_php_handler" "" "project-name= domain= php="
 register_cmd "site" "list" "List configured sites" "site_list_handler" "" ""
