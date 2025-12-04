@@ -71,6 +71,8 @@ Implemented:
 
 Other commands remain as scaffolding stubs; extend `admin/commands/*.sh` to implement them. The registry-based design allows adding sections/commands by registering them in new modules.
 
+See more in `docs/admin.md` and `docs/commands/`.
+
 ### New project (mode A)
 ```bash
 ./simai-env.sh --domain example.com --project-name myapp \
