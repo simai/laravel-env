@@ -12,6 +12,7 @@ ssl_select_domain() {
   if [[ -z "$domain" ]]; then
     domain=$(prompt "domain")
   fi
+  PARSED_ARGS[domain]="$domain"
   echo "$domain"
 }
 
@@ -38,9 +39,13 @@ ssl_issue_handler() {
   parse_kv_args "$@"
   local domain
   domain=$(ssl_select_domain)
-  require_args "domain email"
   local domain="${PARSED_ARGS[domain]:-$domain}"
-  local email="${PARSED_ARGS[email]}"
+  local email="${PARSED_ARGS[email]:-}"
+  if [[ -z "$email" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
+    email=$(prompt "email")
+    PARSED_ARGS[email]="$email"
+  fi
+  require_args "domain email"
   local redirect="${PARSED_ARGS[redirect]:-no}"
   local hsts="${PARSED_ARGS[hsts]:-no}"
   local staging="${PARSED_ARGS[staging]:-no}"
@@ -88,9 +93,7 @@ ssl_install_custom_handler() {
   local cert_src="${PARSED_ARGS[cert]:-}"
   local key_src="${PARSED_ARGS[key]:-}"
   local chain_src="${PARSED_ARGS[chain]:-}"
-  if [[ -z "$domain" ]]; then
-    require_args "domain"
-  fi
+  require_args "domain"
   local dest_dir
   dest_dir=$(ensure_ssl_dir "$domain")
   local cert_dst="${dest_dir}/fullchain.pem"
@@ -136,8 +139,8 @@ ssl_renew_handler() {
   parse_kv_args "$@"
   local domain
   domain=$(ssl_select_domain)
-  require_args "domain"
   local domain="${PARSED_ARGS[domain]:-$domain}"
+  require_args "domain"
   if ! command -v certbot >/dev/null 2>&1; then
     error "certbot is not installed"
     return 1
@@ -157,8 +160,8 @@ ssl_remove_handler() {
   parse_kv_args "$@"
   local domain
   domain=$(ssl_select_domain)
-  require_args "domain"
   local domain="${PARSED_ARGS[domain]:-$domain}"
+  require_args "domain"
   local delete_cert="${PARSED_ARGS[delete-cert]:-no}"
   ssl_site_context "$domain" || return 1
   local template="$NGINX_TEMPLATE"
@@ -181,8 +184,8 @@ ssl_status_handler() {
   parse_kv_args "$@"
   local domain
   domain=$(ssl_select_domain)
-  require_args "domain"
   local domain="${PARSED_ARGS[domain]:-$domain}"
+  require_args "domain"
   local le_cert="/etc/letsencrypt/live/${domain}/fullchain.pem"
   local le_key="/etc/letsencrypt/live/${domain}/privkey.pem"
   local custom_cert="/etc/nginx/ssl/${domain}/fullchain.pem"
