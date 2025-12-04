@@ -41,14 +41,30 @@ ssl_issue_handler() {
   domain=$(ssl_select_domain)
   local domain="${PARSED_ARGS[domain]:-$domain}"
   local email="${PARSED_ARGS[email]:-}"
-  if [[ -z "$email" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
-    email=$(prompt "email")
-    PARSED_ARGS[email]="$email"
+  local redirect="${PARSED_ARGS[redirect]:-}"
+  local hsts="${PARSED_ARGS[hsts]:-}"
+  local staging="${PARSED_ARGS[staging]:-}"
+
+  if [[ "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
+    if [[ -z "$domain" ]]; then
+      local sites=()
+      mapfile -t sites < <(list_sites)
+      domain=$(select_from_list "Select domain" "" "${sites[@]}")
+      PARSED_ARGS[domain]="$domain"
+    fi
+    if [[ -z "$email" ]]; then
+      email=$(prompt "email")
+      PARSED_ARGS[email]="$email"
+    fi
+    [[ -z "$redirect" ]] && redirect=$(select_from_list "Redirect HTTP to HTTPS?" "no" "no" "yes")
+    [[ -z "$hsts" ]] && hsts=$(select_from_list "Enable HSTS?" "no" "no" "yes")
+    [[ -z "$staging" ]] && staging=$(select_from_list "Use Let's Encrypt staging?" "no" "no" "yes")
   fi
+  [[ -z "$redirect" ]] && redirect="no"
+  [[ -z "$hsts" ]] && hsts="no"
+  [[ -z "$staging" ]] && staging="no"
+
   require_args "domain email"
-  local redirect="${PARSED_ARGS[redirect]:-no}"
-  local hsts="${PARSED_ARGS[hsts]:-no}"
-  local staging="${PARSED_ARGS[staging]:-no}"
 
   if [[ -z "$domain" || -z "$email" ]]; then
     error "domain and email are required"
@@ -93,6 +109,14 @@ ssl_install_custom_handler() {
   local cert_src="${PARSED_ARGS[cert]:-}"
   local key_src="${PARSED_ARGS[key]:-}"
   local chain_src="${PARSED_ARGS[chain]:-}"
+  if [[ "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
+    if [[ -z "$domain" ]]; then
+      local sites=()
+      mapfile -t sites < <(list_sites)
+      domain=$(select_from_list "Select domain" "" "${sites[@]}")
+      PARSED_ARGS[domain]="$domain"
+    fi
+  fi
   require_args "domain"
   local dest_dir
   dest_dir=$(ensure_ssl_dir "$domain")
@@ -109,6 +133,8 @@ ssl_install_custom_handler() {
     if [[ -n "$chain_src" ]]; then
       chain_src=$(prompt "Path to chain (optional)" "$chain_src")
     fi
+    redirect=$(select_from_list "Redirect HTTP to HTTPS?" "no" "no" "yes")
+    hsts=$(select_from_list "Enable HSTS?" "no" "no" "yes")
   fi
 
   if [[ -z "$cert_src" || -z "$key_src" ]]; then
@@ -216,8 +242,8 @@ ssl_status_handler() {
   printf "%s\n" "${sep}+"
 }
 
-register_cmd "ssl" "letsencrypt" "Request Let's Encrypt certificate" "ssl_issue_handler" "" "domain= email= redirect=no hsts=no staging=no"
-register_cmd "ssl" "install" "Install custom certificate" "ssl_install_custom_handler" "" "domain= cert= key= chain= redirect=no hsts=no"
+register_cmd "ssl" "letsencrypt" "Request Let's Encrypt certificate" "ssl_issue_handler" "" "domain= email= redirect= hsts= staging="
+register_cmd "ssl" "install" "Install custom certificate" "ssl_install_custom_handler" "" "domain= cert= key= chain= redirect= hsts="
 register_cmd "ssl" "renew" "Renew certificate" "ssl_renew_handler" "" "domain="
-register_cmd "ssl" "remove" "Disable SSL and optionally delete cert" "ssl_remove_handler" "" "domain= delete-cert=no"
+register_cmd "ssl" "remove" "Disable SSL and optionally delete cert" "ssl_remove_handler" "" "domain= delete-cert="
 register_cmd "ssl" "status" "Show SSL status for domain" "ssl_status_handler" "" "domain="
