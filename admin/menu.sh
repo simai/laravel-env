@@ -28,17 +28,19 @@ print_version_banner() {
     fi
   fi
   local GREEN=$'\e[32m' RED=$'\e[31m' RESET=$'\e[0m'
-  local status_colored="$status"
+  local status_padded
+  status_padded=$(printf "%-20s" "$status")
+  local status_colored="$status_padded"
   if [[ "$status" == "up to date" ]]; then
-    status_colored="${GREEN}${status}${RESET}"
+    status_colored="${GREEN}${status_padded}${RESET}"
   elif [[ "$status" == "update available" ]]; then
-    status_colored="${RED}${status}${RESET}"
+    status_colored="${RED}${status_padded}${RESET}"
   fi
   local sep="+----------------------+----------------------+"
   printf "%s\n" "$sep"
   printf "| %-20s | %-20s |\n" "Local version" "$local_version"
   printf "| %-20s | %-20s |\n" "Remote version" "$remote_version"
-  printf "| %-20s | %-20b |\n" "Status" "$status_colored"
+  printf "| %-20s | %s|\n" "Status" "$status_colored"
   printf "%s\n" "$sep"
 }
 
