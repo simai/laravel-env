@@ -19,4 +19,8 @@ Supported OS: Ubuntu 20.04/22.04/24.04. Run as root.
 - Site list shows domain, profile, PHP version, and root/alias target.
 - Logs: `/var/log/simai-admin.log`.
 
+## Self commands
+- `self update`: update scripts in place (reloads menu when invoked from menu).
+- `self version`: show local/remote versions to know if an update is available.
+
 Commands detail: see `docs/commands/*`.

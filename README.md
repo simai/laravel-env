@@ -67,6 +67,7 @@ sudo /root/simai-env/simai-admin.sh self update
 Implemented:
 - `site add` — profiles: `generic` (default placeholder), `laravel` (requires `artisan`), `alias` (points a new domain to an existing site and reuses its PHP-FPM pool).
 - `php list` — shows installed PHP versions and FPM status.
+- `self version` — shows local/remote versions.
 
 Other commands remain as scaffolding stubs; extend `admin/commands/*.sh` to implement them. The registry-based design allows adding sections/commands by registering them in new modules.
 

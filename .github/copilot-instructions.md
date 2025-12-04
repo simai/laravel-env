@@ -10,6 +10,7 @@
 - `simai-env.sh`: main installer (install/clean), creates stack, project, env, nginx/PHP-FPM, cron, queue.
 - `simai-admin.sh`: admin CLI with registry/menu in `admin/`; commands for site/nginx/php-fpm/ssl/db (some stubs).
 - `install.sh` / `update.sh`: fetch/copy repo to `/root/simai-env` and mark scripts executable.
+- `VERSION`: semantic version marker copied on install/update; bump on user-visible changes (at least patch).
 
 ## Admin CLI behaviors
 - Menu runs with numeric selections; stays inside section after commands.

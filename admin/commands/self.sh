@@ -15,4 +15,25 @@ self_update_handler() {
   fi
 }
 
+self_version_handler() {
+  local local_version="(unknown)"
+  local version_file="${SCRIPT_DIR}/VERSION"
+  [[ -f "$version_file" ]] && local_version="$(cat "$version_file")"
+
+  local remote_version
+  remote_version=$(curl -fsSL https://raw.githubusercontent.com/simai/simai-env/main/VERSION 2>/dev/null || true)
+  [[ -z "$remote_version" ]] && remote_version="(unavailable)"
+
+  echo "Local version : ${local_version}"
+  echo "Remote version: ${remote_version}"
+  if [[ "$remote_version" != "(unavailable)" ]]; then
+    if [[ "$local_version" == "$remote_version" ]]; then
+      echo "Status        : up to date"
+    else
+      echo "Status        : update available (run self update)"
+    fi
+  fi
+}
+
 register_cmd "self" "update" "Update simai-env/admin scripts" "self_update_handler" "" ""
+register_cmd "self" "version" "Show local and remote simai-env version" "self_version_handler" "" ""
