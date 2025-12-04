@@ -23,7 +23,7 @@
 - `site remove`: choose domain from list if missing; yes/no prompts for removing files/DB/user; removes nginx/site configs, php-fpm pools (all versions), cron file `/etc/cron.d/<project>`, queue unit `laravel-queue-<project>.service`; alias removal drops nginx/service stubs only.
 - `site list`: prints table with domain, profile, PHP version, root/alias target (uses metadata comments in nginx configs).
 - `site set-php`: choose site (aliases filtered out), switch PHP version by recreating pool and nginx upstream; optional `keep-old-pool` flag (default no).
-- `ssl issue/install/renew/remove/status`: manage LE or custom certs for existing sites (no alias/catch-all); custom certs live in `/etc/nginx/ssl/<domain>/`, LE in `/etc/letsencrypt/live/<domain>/`; webroot = `<project>/public`; renew cron at `/etc/cron.d/simai-certbot`.
+- `ssl letsencrypt/install/renew/remove/status`: manage LE or custom certs for existing sites (aliases allowed, catch-all excluded); custom certs live in `/etc/nginx/ssl/<domain>/`, LE in `/etc/letsencrypt/live/<domain>/`; webroot = `<project>/public`; renew cron at `/etc/cron.d/simai-certbot`.
 - `php list`/`php reload`: list installed PHP versions, reload FPM; menu selection when needed.
 - `ssl` commands: select domain from existing sites when not provided (handlers are stubs).
 - Menu uses `select_from_list` for choices; prints separators before/after commands; respects `SIMAI_ADMIN_MENU` flag for reload after self-update.

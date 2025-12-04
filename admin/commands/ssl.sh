@@ -6,11 +6,7 @@ ssl_select_domain() {
   if [[ -z "$domain" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
     local sites=() filtered=()
     mapfile -t sites < <(list_sites)
-    for s in "${sites[@]}"; do
-      read_site_metadata "$s"
-      [[ "${SITE_META[profile]}" == "alias" ]] && continue
-      filtered+=("$s")
-    done
+    filtered=("${sites[@]}")
     domain=$(select_from_list "Select domain" "" "${filtered[@]}")
   fi
   echo "$domain"
@@ -19,10 +15,6 @@ ssl_select_domain() {
 ssl_site_context() {
   local domain="$1"
   read_site_metadata "$domain"
-  if [[ "${SITE_META[profile]:-}" == "alias" ]]; then
-    error "SSL operations are not supported for alias sites. Use the target site."
-    return 1
-  fi
   SITE_SSL_PROJECT="${SITE_META[project]}"
   SITE_SSL_ROOT="${SITE_META[root]}"
   SITE_SSL_PROFILE="${SITE_META[profile]}"
@@ -218,7 +210,7 @@ ssl_status_handler() {
   printf "%s\n" "${sep}+"
 }
 
-register_cmd "ssl" "issue" "Request Let's Encrypt certificate" "ssl_issue_handler" "domain email" "redirect=no hsts=no staging=no"
+register_cmd "ssl" "letsencrypt" "Request Let's Encrypt certificate" "ssl_issue_handler" "domain email" "redirect=no hsts=no staging=no"
 register_cmd "ssl" "install" "Install custom certificate" "ssl_install_custom_handler" "domain" "cert= key= chain= redirect=no hsts=no"
 register_cmd "ssl" "renew" "Renew certificate" "ssl_renew_handler" "domain" ""
 register_cmd "ssl" "remove" "Disable SSL and optionally delete cert" "ssl_remove_handler" "domain" "delete-cert=no"

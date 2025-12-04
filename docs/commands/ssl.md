@@ -2,7 +2,7 @@
 
 Run with `sudo /root/simai-env/simai-admin.sh ssl <command> [options]` or via menu.
 
-## issue (Let's Encrypt)
+## letsencrypt (Let's Encrypt)
 Request a certificate via webroot.
 - `--domain` (required)
 - `--email` (required)
