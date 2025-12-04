@@ -26,6 +26,7 @@
 - `ssl` commands: select domain from existing sites when not provided (handlers are stubs).
 - Menu uses `select_from_list` for choices; prints separators before/after commands; respects `SIMAI_ADMIN_MENU` flag for reload after self-update.
   - Prompt rule: when a parameter has a finite set of values, always show a numbered list, a title `Select <param>`, and an `Enter choice [<default>]:` line. Accept either a number or an exact value; empty input picks the default. For binary questions use `yes`/`no` (still numbered).
+  - Table rule: when showing existing entities (sites, SSL certs, PHP versions/pools, cron jobs, queues, DBs/users), render a bordered table (`+---+` separators, header row, closing border) with only the key columns for quick diagnostics. Example columns: sites → domain/profile/PHP/root-or-alias; SSL → domain/status/notBefore/notAfter/issuer; PHP → version/status/pool count; cron → project/schedule/command; queues → project/unit/status; DB → name/owner/host/encoding.
 
 ## Templates
 - `templates/nginx-laravel.conf`: root `{{PROJECT_ROOT}}/public`, PHP-FPM socket per project (`{{PHP_SOCKET_PROJECT}}` allows aliasing to an existing pool).
