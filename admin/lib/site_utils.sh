@@ -131,19 +131,16 @@ require_laravel_structure() {
 
 create_placeholder_if_missing() {
   local project_path="$1"
-  local index_php="${project_path}/index.php"
   local public_index="${project_path}/public/index.php"
-  if [[ -f "$index_php" || -f "$public_index" ]]; then
+  if [[ -f "$public_index" ]]; then
     return
   fi
-  mkdir -p "${project_path}"
   mkdir -p "${project_path}/public"
-  cat >"$index_php" <<'EOF'
+  cat >"$public_index" <<'EOF'
 <?php
 http_response_code(200);
 echo "Placeholder: site is configured.";
 EOF
-  cp "$index_php" "$public_index" 2>/dev/null || true
 }
 
 remove_nginx_site() {
@@ -189,8 +186,7 @@ install_healthcheck() {
     warn "Healthcheck template not found at ${HEALTHCHECK_TEMPLATE}"
     return
   fi
-  mkdir -p "$project_path" "$project_path/public"
-  cp "$HEALTHCHECK_TEMPLATE" "$project_path/healthcheck.php"
+  mkdir -p "$project_path/public"
   cp "$HEALTHCHECK_TEMPLATE" "$project_path/public/healthcheck.php"
 }
 

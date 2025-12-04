@@ -8,8 +8,8 @@ $status = [
         'curl' => extension_loaded('curl'),
     ],
     'fs' => [
-        'storage_writable' => is_writable(__DIR__ . '/storage') || is_writable(__DIR__ . '/public/storage') || is_writable(__DIR__),
-        'cache_writable' => is_writable(__DIR__ . '/bootstrap/cache') || is_writable(__DIR__),
+        'storage_writable' => is_writable(__DIR__ . '/../storage') || is_writable(__DIR__ . '/storage') || is_writable(__DIR__),
+        'cache_writable' => is_writable(__DIR__ . '/../bootstrap/cache') || is_writable(__DIR__ . '/bootstrap/cache') || is_writable(__DIR__),
     ],
     'db' => [
         'checked' => false,
@@ -17,6 +17,26 @@ $status = [
         'error' => null,
     ],
 ];
+
+// load .env if present (simple parser)
+$envPath = __DIR__ . '/../.env';
+if (file_exists($envPath)) {
+    $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(ltrim($line), '#') === 0) {
+            continue;
+        }
+        if (!str_contains($line, '=')) {
+            continue;
+        }
+        [$k, $v] = explode('=', $line, 2);
+        $k = trim($k);
+        $v = trim($v, " \t\n\r\0\x0B\"'");
+        if ($k !== '') {
+            putenv("$k=$v");
+        }
+    }
+}
 
 $dbHost = getenv('DB_HOST') ?: '127.0.0.1';
 $dbPort = getenv('DB_PORT') ?: '3306';
