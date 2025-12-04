@@ -20,6 +20,7 @@ list_sites() {
   for cfg in /etc/nginx/sites-available/*.conf; do
     local name
     name=$(basename "$cfg" .conf)
+    [[ "$name" == "000-catchall" ]] && continue
     echo "$name"
   done | sort
   shopt -u nullglob
