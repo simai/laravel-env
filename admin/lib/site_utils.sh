@@ -105,7 +105,7 @@ EOF
 }
 
 create_nginx_site() {
-  local domain="$1" project="$2" project_path="$3" php_version="$4" template_path="${5:-$NGINX_TEMPLATE}" profile="${6:-}" target="${7:-}" php_socket_project="${8:-$project}"
+  local domain="$1" project="$2" project_path="$3" php_version="$4" template_path="${5:-$NGINX_TEMPLATE}" profile="${6:-}" target="${7:-}" php_socket_project="${8:-$project}" ssl_cert="${9:-}" ssl_key="${10:-}" ssl_chain="${11:-}" ssl_redirect="${12:-no}" ssl_hsts="${13:-no}"
   if [[ ! -f "$template_path" ]]; then
     error "nginx template not found at ${template_path}"
     exit 1
@@ -120,6 +120,7 @@ create_nginx_site() {
     echo "# simai-php: ${php_version}"
     echo "# simai-target: ${target}"
     echo "# simai-php-socket-project: ${php_socket_project}"
+    echo "# simai-ssl: $([[ -n "$ssl_cert" && -n "$ssl_key" ]] && echo on || echo off)"
     sed -e "s#{{SERVER_NAME}}#${domain}#g" \
       -e "s#{{PROJECT_ROOT}}#${project_path}#g" \
       -e "s#{{PROJECT_NAME}}#${project}#g" \
@@ -129,6 +130,17 @@ create_nginx_site() {
   ln -sf "$site_available" "$site_enabled"
   if [[ -f /etc/nginx/sites-enabled/default ]]; then
     rm -f /etc/nginx/sites-enabled/default
+  fi
+  if [[ -n "$ssl_cert" && -n "$ssl_key" ]]; then
+    perl -0pi -e 's/^(\\s*listen 80;.*)$/\1\n    listen 443 ssl;/m' "$site_available"
+    perl -0pi -e "s/^(\\s*server_name\\s+.*;)/\\1\\n    ssl_certificate ${ssl_cert};\\n    ssl_certificate_key ${ssl_key};/m" "$site_available"
+    [[ -n "$ssl_chain" ]] && perl -0pi -e "s/^(\\s*ssl_certificate_key.*;)/\\1\\n    ssl_trusted_certificate ${ssl_chain};/m" "$site_available"
+    if [[ "$ssl_hsts" == "yes" ]]; then
+      perl -0pi -e 's/^}\\s*$//m; print "    add_header Strict-Transport-Security \"max-age=31536000\" always;\\n}\n" unless /Strict-Transport-Security/' "$site_available"
+    fi
+    if [[ "$ssl_redirect" == "yes" ]]; then
+      perl -0pi -e 's/^}\\s*$//m; print "    # simai-ssl-redirect-start\n    if ($scheme != \"https\") { return 301 https://$host$request_uri; }\n    # simai-ssl-redirect-end\n}\n" unless /simai-ssl-redirect/' "$site_available"
+    fi
   fi
   ensure_nginx_catchall
   nginx -t >>"$LOG_FILE" 2>&1 || { error "nginx config test failed"; exit 1; }
@@ -271,6 +283,26 @@ EOF
   chown "$SIMAI_USER":www-data "$env_file" 2>/dev/null || true
 }
 
+ensure_ssl_dir() {
+  local domain="$1"
+  local dir="/etc/nginx/ssl/${domain}"
+  mkdir -p "$dir"
+  chmod 750 "$dir"
+  chown root:root "$dir"
+  echo "$dir"
+}
+
+ensure_certbot_cron() {
+  local cron_file="/etc/cron.d/simai-certbot"
+  if [[ -f "$cron_file" ]]; then
+    return
+  fi
+  cat >"$cron_file" <<'EOF'
+SHELL=/bin/bash
+0 3,15 * * * root certbot renew --quiet --deploy-hook "systemctl reload nginx"
+EOF
+}
+
 switch_site_php() {
   local domain="$1" new_php="$2" keep_old="${3:-no}"
   read_site_metadata "$domain"
@@ -299,7 +331,7 @@ switch_site_php() {
   fi
 
   create_php_pool "$project" "$new_php" "$root"
-  create_nginx_site "$domain" "$project" "$root" "$new_php" "$template" "$profile" "" "$socket_project"
+  create_nginx_site "$domain" "$project" "$root" "$new_php" "$template" "$profile" "" "$socket_project" "" "" "" "no" "no"
 
   if [[ "$keep_old" != "yes" && -n "$old_php" && "$old_php" != "$new_php" ]]; then
     remove_php_pool_version "$project" "$old_php"

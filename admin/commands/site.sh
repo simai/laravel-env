@@ -106,7 +106,7 @@ site_add_handler() {
   ensure_project_permissions "$path"
 
   create_php_pool "$project" "$php_version" "$path"
-  create_nginx_site "$domain" "$project" "$path" "$php_version" "$template_path" "$profile" "" "$project"
+  create_nginx_site "$domain" "$project" "$path" "$php_version" "$template_path" "$profile" "" "$project" "" "" "" "no" "no"
   install_healthcheck "$path"
 
   if [[ "$create_db" == "yes" ]]; then

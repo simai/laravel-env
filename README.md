@@ -69,6 +69,7 @@ Implemented:
 - `php list` — shows installed PHP versions and FPM status.
 - `self version` — shows local/remote versions.
 - `site set-php` — switches PHP version for a site (excludes aliases), recreates pool/nginx upstream.
+- `ssl issue/install/renew/remove/status` — manage Let's Encrypt or custom certificates and nginx HTTPS setup.
 
 Other commands remain as scaffolding stubs; extend `admin/commands/*.sh` to implement them. The registry-based design allows adding sections/commands by registering them in new modules.
 
