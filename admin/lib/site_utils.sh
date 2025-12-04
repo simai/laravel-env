@@ -175,7 +175,7 @@ remove_nginx_site() {
   fi
 }
 
-en sure_nginx_catchall() {
+ensure_nginx_catchall() {
   local catchall_avail="/etc/nginx/sites-available/000-catchall.conf"
   local catchall_enabled="/etc/nginx/sites-enabled/000-catchall.conf"
   if [[ -f "$catchall_avail" && -L "$catchall_enabled" ]]; then
