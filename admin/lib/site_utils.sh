@@ -306,6 +306,31 @@ SHELL=/bin/bash
 EOF
 }
 
+site_ssl_brief() {
+  local domain="$1"
+  local cert="" key="" type="off" until=""
+  local le_cert="/etc/letsencrypt/live/${domain}/fullchain.pem"
+  local le_key="/etc/letsencrypt/live/${domain}/privkey.pem"
+  local custom_cert="/etc/nginx/ssl/${domain}/fullchain.pem"
+  local custom_key="/etc/nginx/ssl/${domain}/privkey.pem"
+  if [[ -f "$le_cert" && -f "$le_key" ]]; then
+    cert="$le_cert"; key="$le_key"; type="LE"
+  elif [[ -f "$custom_cert" && -f "$custom_key" ]]; then
+    cert="$custom_cert"; key="$custom_key"; type="custom"
+  fi
+  if [[ -n "$cert" ]]; then
+    until=$(openssl x509 -enddate -noout -in "$cert" 2>/dev/null | cut -d= -f2 || true)
+    [[ -n "$until" ]] && until=$(date -d "$until" +%Y-%m-%d 2>/dev/null || echo "$until")
+  fi
+  if [[ "$type" == "off" ]]; then
+    echo "off"
+  elif [[ -n "$until" ]]; then
+    echo "${type}:${until}"
+  else
+    echo "${type}"
+  fi
+}
+
 switch_site_php() {
   local domain="$1" new_php="$2" keep_old="${3:-no}"
   read_site_metadata "$domain"
@@ -354,6 +379,7 @@ read_site_metadata() {
     ["php"]=""
     ["target"]=""
     ["php_socket_project"]=""
+    ["ssl"]="off"
   )
   if [[ -f "$cfg" ]]; then
     while IFS= read -r line; do
@@ -368,6 +394,7 @@ read_site_metadata() {
           php) SITE_META["php"]="$val" ;;
           target) SITE_META["target"]="$val" ;;
           php-socket-project) SITE_META["php_socket_project"]="$val" ;;
+          ssl) SITE_META["ssl"]="$val" ;;
         esac
       fi
     done <"$cfg"

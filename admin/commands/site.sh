@@ -274,9 +274,9 @@ site_set_php_handler() {
 }
 
 site_list_handler() {
-  local sep="+------------------------------+------------+----------+------------------------------------------+"
+  local sep="+------------------------------+------------+----------+----------------------+------------------------------------------+"
   printf "%s\n" "$sep"
-  printf "| %-28s | %-10s | %-8s | %-40s |\n" "Domain" "Profile" "PHP" "Root/Target"
+  printf "| %-28s | %-10s | %-8s | %-20s | %-40s |\n" "Domain" "Profile" "PHP" "SSL" "Root/Target"
   printf "%s\n" "$sep"
   local s
   while IFS= read -r s; do
@@ -286,11 +286,13 @@ site_list_handler() {
     local php="${SITE_META[php]:-}"
     local root="${SITE_META[root]:-}"
     local target="${SITE_META[target]:-}"
+    local ssl_info
+    ssl_info=$(site_ssl_brief "$s")
     local summary="$root"
     if [[ "$profile" == "alias" && -n "$target" ]]; then
       summary="alias -> ${target}"
     fi
-    printf "| %-28s | %-10s | %-8s | %-40s |\n" "$s" "$profile" "$php" "$summary"
+    printf "| %-28s | %-10s | %-8s | %-20s | %-40s |\n" "$s" "$profile" "$php" "$ssl_info" "$summary"
   done < <(list_sites)
   printf "%s\n" "$sep"
 }
