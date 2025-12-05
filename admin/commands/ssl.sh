@@ -112,6 +112,7 @@ ssl_install_custom_handler() {
   local cert_src="${PARSED_ARGS[cert]:-}"
   local key_src="${PARSED_ARGS[key]:-}"
   local chain_src="${PARSED_ARGS[chain]:-}"
+  [[ -n "$domain" ]] && PARSED_ARGS[domain]="$domain"
   if [[ "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
     if [[ -z "$domain" ]]; then
       local sites=()
@@ -120,7 +121,9 @@ ssl_install_custom_handler() {
       PARSED_ARGS[domain]="$domain"
     fi
   fi
+  domain="${PARSED_ARGS[domain]:-$domain}"
   require_args "domain"
+  domain="${PARSED_ARGS[domain]}"
   local dest_dir
   dest_dir=$(ensure_ssl_dir "$domain")
   local cert_dst="${dest_dir}/fullchain.pem"
