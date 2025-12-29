@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.11] - 2025-12-29
+### Fixed
+- `php list` now shows a bordered table with FPM status and pool counts.
+- `site set-php` preserves SSL/custom nginx config by patching sockets in-place, recreates pools, and refreshes cron/queue for Laravel.
+
 ## [0.7.10] - 2025-12-29
 ### Fixed
 - Ensure cron is installed/started during simai-env installs and improve cron removal UX (project-name or path).

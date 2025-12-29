@@ -60,5 +60,6 @@ Options:
 - `--project-name` (optional; inferred from domain)
 
 Behavior:
-- Recreates PHP-FPM pool for the target version, updates nginx upstream and metadata, reloads services.
+- Recreates PHP-FPM pool for the target version, patches nginx upstream sockets in-place (preserves SSL/custom edits), updates metadata, and reloads services after backing up nginx config.
+- Laravel profile also refreshes `/etc/cron.d/<project>` and updates/restarts the queue unit if present.
 - Refuses to run for alias profile (change PHP on the target site instead).

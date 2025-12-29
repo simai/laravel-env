@@ -3,7 +3,7 @@
 Run with `sudo /root/simai-env/simai-admin.sh php <command> [options]` or via menu.
 
 ## list
-List installed PHP versions (found under `/etc/php/*`) and FPM status.
+List installed PHP versions (found under `/etc/php/*`) with a bordered table showing version, FPM status, and non-default pool count.
 
 ## reload
 Reload/restart PHP-FPM for a specific version.

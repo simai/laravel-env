@@ -314,6 +314,20 @@ remove_php_pools() {
   done
 }
 
+backup_file() {
+  local path="$1"
+  if [[ -f "$path" ]]; then
+    local ts backup
+    ts=$(date +%Y%m%d%H%M%S)
+    backup="${path}.bak.${ts}"
+    if cp -p "$path" "$backup" >>"$LOG_FILE" 2>&1; then
+      info "Backed up ${path} to ${backup}"
+    else
+      warn "Failed to backup ${path}"
+    fi
+  fi
+}
+
 reload_cron_daemon() {
   ensure_cron_service
   systemctl reload cron >>"$LOG_FILE" 2>&1 || systemctl restart cron >>"$LOG_FILE" 2>&1 || service cron reload >>"$LOG_FILE" 2>&1 || true
@@ -356,6 +370,32 @@ EOF
   chmod 644 "$cron_file" 2>/dev/null || true
   chown root:root "$cron_file" 2>/dev/null || true
   reload_cron_daemon
+}
+
+nginx_patch_php_socket() {
+  local domain="$1" new_php="$2" socket_project="$3"
+  local cfg="/etc/nginx/sites-available/${domain}.conf"
+  if [[ ! -f "$cfg" ]]; then
+    error "nginx config not found for ${domain} at ${cfg}"
+    return 1
+  fi
+  backup_file "$cfg"
+  local new_socket="/run/php/php${new_php}-fpm-${socket_project}.sock"
+  local pattern="/run/php/php[0-9.]+-fpm-${socket_project}\\.sock"
+  perl -pi -e "s#${pattern}#${new_socket}#g" "$cfg"
+  if grep -q "^# simai-php:" "$cfg"; then
+    perl -pi -e "s|^(# simai-php: ).*|\\1${new_php}|" "$cfg"
+  else
+    if grep -q "^# simai-root:" "$cfg"; then
+      perl -0pi -e "s/(^# simai-root:.*\n)/\\1# simai-php: ${new_php}\n/" "$cfg"
+    else
+      perl -0pi -e "s/(^# simai-project:.*\n)/\\1# simai-php: ${new_php}\n/" "$cfg"
+    fi
+  fi
+  if ! grep -q "${new_socket}" "$cfg"; then
+    error "Failed to update PHP socket to ${new_socket} in ${cfg}"
+    return 1
+  fi
 }
 
 remove_cron_file() {
@@ -468,6 +508,9 @@ site_ssl_brief() {
 
 switch_site_php() {
   local domain="$1" new_php="$2" keep_old="${3:-no}"
+  if ! validate_domain "$domain"; then
+    return 1
+  fi
   read_site_metadata "$domain"
   local profile="${SITE_META[profile]:-generic}"
   if [[ "$profile" == "alias" ]]; then
@@ -478,6 +521,9 @@ switch_site_php() {
   local root="${SITE_META[root]}"
   local socket_project="${SITE_META[php_socket_project]:-$project}"
   local old_php="${SITE_META[php]}"
+  if [[ ! -d "$root" ]]; then
+    warn "Project root ${root} not found; continuing"
+  fi
 
   if [[ "$new_php" == "$old_php" ]]; then
     info "PHP version for ${domain} is already ${new_php}; nothing to do."
@@ -488,19 +534,44 @@ switch_site_php() {
     return 1
   fi
 
-  local template="$NGINX_TEMPLATE"
-  if [[ "$profile" == "generic" ]]; then
-    template="$NGINX_TEMPLATE_GENERIC"
+  create_php_pool "$socket_project" "$new_php" "$root"
+  if ! nginx_patch_php_socket "$domain" "$new_php" "$socket_project"; then
+    return 1
   fi
 
-  create_php_pool "$project" "$new_php" "$root"
-  create_nginx_site "$domain" "$project" "$root" "$new_php" "$template" "$profile" "" "$socket_project" "" "" "" "no" "no"
+  nginx -t >>"$LOG_FILE" 2>&1 || { error "nginx config test failed"; return 1; }
+  systemctl reload nginx >>"$LOG_FILE" 2>&1 || systemctl restart nginx >>"$LOG_FILE" 2>&1 || true
+
+  if [[ "$profile" == "laravel" ]]; then
+    ensure_project_cron "$project" "$profile" "$root" "$new_php"
+    local unit="/etc/systemd/system/laravel-queue-${project}.service"
+    if [[ -f "$unit" ]]; then
+      backup_file "$unit"
+      local php_bin
+      php_bin=$(resolve_php_bin "$new_php")
+      perl -pi -e "s#^(ExecStart=)\\S+(\\s+.*)#\\1${php_bin}\\2#" "$unit"
+      systemctl daemon-reload >>"$LOG_FILE" 2>&1 || true
+      systemctl restart "laravel-queue-${project}.service" >>"$LOG_FILE" 2>&1 || warn "Failed to restart queue service laravel-queue-${project}.service"
+    fi
+  fi
 
   if [[ "$keep_old" != "yes" && -n "$old_php" && "$old_php" != "$new_php" ]]; then
-    remove_php_pool_version "$project" "$old_php"
+    remove_php_pool_version "$socket_project" "$old_php"
   fi
 
-  info "PHP version switched for ${domain}: ${old_php} -> ${new_php}"
+  echo "===== PHP switch summary ====="
+  echo "Domain      : ${domain}"
+  echo "Profile     : ${profile}"
+  echo "Socket proj : ${socket_project}"
+  echo "PHP         : ${old_php} -> ${new_php}"
+  echo "Nginx       : patched in-place (SSL preserved)"
+  echo "Pool        : new ${new_php} created; old $([[ "$keep_old" == "yes" ]] && echo kept || echo removed)"
+  if [[ "$profile" == "laravel" ]]; then
+    echo "Cron        : /etc/cron.d/${project} refreshed"
+    if [[ -f "/etc/systemd/system/laravel-queue-${project}.service" ]]; then
+      echo "Queue unit  : updated to php ${new_php}"
+    fi
+  fi
 }
 
 read_site_metadata() {

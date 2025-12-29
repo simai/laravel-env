@@ -307,10 +307,6 @@ site_set_php_handler() {
   [[ "$keep_old_pool" == "yes" ]] && keep_old_pool="yes" || keep_old_pool="no"
 
   switch_site_php "$domain" "$php_version" "$keep_old_pool"
-  echo "===== PHP switch summary ====="
-  echo "Domain : ${domain}"
-  echo "PHP    : ${php_version}"
-  echo "Keep old pool: ${keep_old_pool}"
 }
 
 site_list_handler() {

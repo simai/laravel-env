@@ -9,13 +9,22 @@ php_list_handler() {
     return
   fi
 
-  info "Installed PHP versions:"
+  local border="+----------+------------+------------+"
+  printf "%s\n" "$border"
+  printf "| %-8s | %-10s | %-10s |\n" "Version" "FPM status" "Pool count"
+  printf "%s\n" "$border"
   for v in "${versions[@]}"; do
     local svc="php${v}-fpm"
     local status
-    status=$(systemctl is-active "$svc" 2>/dev/null || echo "inactive")
-    echo "  ${v}: fpm ${status}"
+    status=$(systemctl is-active "$svc" 2>/dev/null || echo "unknown")
+    local pool_dir="/etc/php/${v}/fpm/pool.d"
+    local pool_count=0
+    if [[ -d "$pool_dir" ]]; then
+      pool_count=$(find "$pool_dir" -maxdepth 1 -type f -name "*.conf" ! -name "www.conf" 2>/dev/null | wc -l | tr -d ' ')
+    fi
+    printf "| %-8s | %-10s | %-10s |\n" "$v" "$status" "$pool_count"
   done
+  printf "%s\n" "$border"
 }
 
 php_reload_handler() {
