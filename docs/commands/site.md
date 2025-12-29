@@ -8,8 +8,8 @@ Create nginx vhost and project root for an existing path.
 Options:
 - `--domain` (required)
 - `--project-name` (optional; derived from domain if missing)
- - `--path` (optional; default uses path style under `/home/simai/www/`)
- - `--path-style` (`slug`|`domain`) controls default path when `--path` is not set. Default is `domain` (e.g., `/home/simai/www/example.com`). Use `--path-style slug` to restore legacy slug paths or set `/etc/simai-env.conf` with `SIMAI_DEFAULT_PATH_STYLE=domain|slug`.
+- `--path` (optional; default uses path style under `/home/simai/www/`)
+ - `--path-style` (`slug`|`domain`) controls default path when `--path` is not set. Default is `domain` (e.g., `/home/simai/www/example.com`). Use `--path-style slug` to restore legacy slug paths or set `/etc/simai-env.conf` with `SIMAI_DEFAULT_PATH_STYLE=domain|slug`. Menu does not prompt for path style; domain-based default is used unless overridden via CLI/config.
 - `--profile` (`generic`|`laravel`|`static`|`alias`, default `generic`)
 - `--php` (optional; choose from installed if omitted)
 - DB (optional): `--create-db=yes|no`, `--db-name`, `--db-user`, `--db-pass` (defaults from project; password generated)

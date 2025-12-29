@@ -159,7 +159,7 @@ run_command() {
   audit_log "start" "$caller" "$section" "$name" "$args_redacted" "" "$corr_id"
   info "Running command ${section} ${name} (corr_id=${corr_id})"
   set +e
-  "$handler" "$@"
+  ( "$handler" "$@" )
   local rc=$?
   set -e
   audit_log "finish" "$caller" "$section" "$name" "$args_redacted" "$rc" "$corr_id"

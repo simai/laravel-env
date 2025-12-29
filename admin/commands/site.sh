@@ -34,29 +34,9 @@ site_add_handler() {
   fi
   local path="${PARSED_ARGS[path]:-}"
   if [[ -z "$path" ]]; then
-    if [[ "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
-      path_style=$(select_from_list "Select project directory style" "$path_style" "domain" "slug")
-    fi
-    local domain_path="${WWW_ROOT}/${domain}"
-    local slug_path="${WWW_ROOT}/${project}"
-    if [[ "$path_style" == "domain" ]]; then
-      if [[ -d "$domain_path" ]]; then
-        path="$domain_path"
-      elif [[ -d "$slug_path" ]]; then
-        warn "Detected existing slug directory ${slug_path}. Using it to avoid duplicates. Use --path-style domain or --path to force."
-        path="$slug_path"
-      else
-        path="$domain_path"
-      fi
-    else
-      if [[ -d "$slug_path" ]]; then
-        path="$slug_path"
-      elif [[ -d "$domain_path" ]]; then
-        warn "Detected existing domain directory ${domain_path}. Using it to avoid duplicates. Use --path-style slug or --path to force."
-        path="$domain_path"
-      else
-        path="$slug_path"
-      fi
+    path="${WWW_ROOT}/${domain}"
+    if [[ "$path_style" == "slug" ]]; then
+      path="${WWW_ROOT}/${project}"
     fi
   fi
   if ! validate_path "$path"; then

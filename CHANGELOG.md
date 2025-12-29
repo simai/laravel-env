@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.20] - 2025-12-29
+### Fixed
+- Site add menu no longer prompts for path style; default directory uses the domain with dots unless overridden via CLI/config.
+- Menu now survives handler exits (handlers run in subshell); failures report exit codes instead of terminating the menu.
+- SSL status/remove respect the reserved-domain allow policy.
+
+## [0.7.19] - 2025-12-29
+### Fixed
+- Site add (menu) no longer prompts for path style; default directory uses the domain with dots when --path is not provided, while CLI path-style overrides remain available.
+
 ## [0.7.18] - 2025-12-29
 ### Fixed
 - Reserved-domain guard now blocks creation unless ALLOW_RESERVED_DOMAIN=yes but allows cleanup/status operations without misleading prompts.

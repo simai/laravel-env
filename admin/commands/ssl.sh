@@ -87,7 +87,7 @@ ssl_issue_handler() {
   require_args "domain email"
   domain="${PARSED_ARGS[domain]}"
   email="${PARSED_ARGS[email]}"
-  if ! validate_domain "$domain"; then
+  if ! validate_domain "$domain" "allow"; then
     return 1
   fi
   if ! require_site_exists "$domain"; then
@@ -146,7 +146,7 @@ ssl_install_custom_handler() {
   domain="${PARSED_ARGS[domain]:-$domain}"
   require_args "domain"
   domain="${PARSED_ARGS[domain]}"
-  if ! validate_domain "$domain"; then
+  if ! validate_domain "$domain" "allow"; then
     return 1
   fi
   if ! require_site_exists "$domain"; then
@@ -266,7 +266,11 @@ ssl_remove_handler() {
   fi
   ssl_site_context "$domain" || return 1
   local template="$NGINX_TEMPLATE"
-  [[ "$SITE_SSL_PROFILE" == "generic" ]] && template="$NGINX_TEMPLATE_GENERIC"
+  if [[ "$SITE_SSL_PROFILE" == "static" ]]; then
+    template="$NGINX_TEMPLATE_STATIC"
+  elif [[ "$SITE_SSL_PROFILE" == "generic" ]]; then
+    template="$NGINX_TEMPLATE_GENERIC"
+  fi
   info "Removing SSL config for ${domain}"
   create_nginx_site "$domain" "$SITE_SSL_PROJECT" "$SITE_SSL_ROOT" "$SITE_SSL_PHP" "$template" "$SITE_SSL_PROFILE" "" "$SITE_SSL_SOCKET_PROJECT" "" "" "" "no" "no"
   if [[ "$delete_cert" == "yes" ]]; then
