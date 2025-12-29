@@ -4,6 +4,7 @@ set -euo pipefail
 LOG_FILE=${LOG_FILE:-/var/log/simai-admin.log}
 AUDIT_LOG_FILE=${AUDIT_LOG_FILE:-/var/log/simai-audit.log}
 ADMIN_USER=${ADMIN_USER:-simai}
+SIMAI_RC_MENU_RELOAD=88
 if [[ -f /etc/simai-env.conf ]]; then
   # shellcheck disable=SC1091
   source /etc/simai-env.conf
@@ -187,6 +188,31 @@ parse_kv_args() {
         ;;
     esac
   done
+}
+
+progress_init() {
+  PROGRESS_TOTAL=$1
+  PROGRESS_CURRENT=0
+}
+
+progress_step() {
+  local msg="$*"
+  if [[ -z "${PROGRESS_TOTAL:-}" ]]; then
+    info "[?/?] ${msg}"
+    return
+  fi
+  PROGRESS_CURRENT=$((PROGRESS_CURRENT+1))
+  info "[${PROGRESS_CURRENT}/${PROGRESS_TOTAL}] ${msg}"
+}
+
+progress_done() {
+  local msg="${1:-Done}"
+  if [[ -n "${PROGRESS_TOTAL:-}" && -n "${PROGRESS_CURRENT:-}" ]]; then
+    info "[${PROGRESS_TOTAL}/${PROGRESS_TOTAL}] ${msg}"
+  else
+    info "${msg}"
+  fi
+  unset PROGRESS_TOTAL PROGRESS_CURRENT
 }
 
 require_args() {

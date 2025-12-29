@@ -65,6 +65,7 @@ ssl_issue_handler() {
   if ! domain=$(ssl_select_domain); then
     return 1
   fi
+  progress_init 6
   domain="${PARSED_ARGS[domain]:-$domain}"
   local email="${PARSED_ARGS[email]:-}"
   local redirect="${PARSED_ARGS[redirect]:-}"
@@ -95,7 +96,8 @@ ssl_issue_handler() {
   require_args "domain email"
   domain="${PARSED_ARGS[domain]}"
   email="${PARSED_ARGS[email]}"
-  if ! validate_domain "$domain" "allow"; then
+  progress_step "Validating domain and loading site metadata"
+  if ! validate_domain "$domain"; then
     return 1
   fi
   if ! require_site_exists "$domain"; then
@@ -105,22 +107,28 @@ ssl_issue_handler() {
     error "certbot is not installed"
     return 1
   fi
-  ssl_site_context "$domain" || return 1
+  if ! ssl_site_context "$domain"; then
+    error "Failed to read site context for ${domain}. Check nginx config metadata headers (simai-*)."
+    return 1
+  fi
   local webroot="${SITE_SSL_ROOT}/public"
   mkdir -p "$webroot"
+  progress_step "Preparing ACME webroot at ${webroot}"
 
   local cmd=(certbot certonly --webroot -w "$webroot" -d "$domain" --non-interactive --agree-tos -m "$email" --keep-until-expiring)
   [[ "$staging" == "yes" ]] && cmd+=(--staging)
-  info "Issuing Let's Encrypt certificate for ${domain} via webroot ${webroot}"
+  progress_step "Requesting certificate from Let's Encrypt (staging=${staging})"
   if ! "${cmd[@]}" >>"$LOG_FILE" 2>&1; then
-    error "certbot failed for ${domain}; see ${LOG_FILE}"
+    error "Certbot failed. Check: simai-admin.sh logs letsencrypt"
     return 1
   fi
   local cert="/etc/letsencrypt/live/${domain}/fullchain.pem"
   local key="/etc/letsencrypt/live/${domain}/privkey.pem"
   local chain="/etc/letsencrypt/live/${domain}/chain.pem"
+  progress_step "Applying nginx SSL configuration (redirect=${redirect}, hsts=${hsts})"
   ssl_apply_nginx "$domain" "$cert" "$key" "$chain" "$redirect" "$hsts"
   ensure_certbot_cron
+  progress_step "Reloading nginx"
   echo "===== SSL issue summary ====="
   echo "Domain   : ${domain}"
   echo "Type     : Let's Encrypt"
@@ -129,14 +137,16 @@ ssl_issue_handler() {
   echo "Chain    : ${chain}"
   echo "Redirect : ${redirect}"
   echo "HSTS     : ${hsts}"
+  progress_done "Done"
 }
 
 ssl_install_custom_handler() {
   parse_kv_args "$@"
   local domain
-  if ! domain=$(ssl_select_domain "allow"); then
+  if ! domain=$(ssl_select_domain); then
     return 1
   fi
+  progress_init 6
   local redirect="${PARSED_ARGS[redirect]:-no}"
   local hsts="${PARSED_ARGS[hsts]:-no}"
   local cert_src="${PARSED_ARGS[cert]:-}"
@@ -154,10 +164,15 @@ ssl_install_custom_handler() {
   domain="${PARSED_ARGS[domain]:-$domain}"
   require_args "domain"
   domain="${PARSED_ARGS[domain]}"
-  if ! validate_domain "$domain" "allow"; then
+  progress_step "Validating domain and loading site metadata"
+  if ! validate_domain "$domain"; then
     return 1
   fi
   if ! require_site_exists "$domain"; then
+    return 1
+  fi
+  if ! ssl_site_context "$domain"; then
+    error "Failed to read site context for ${domain}. Check nginx config metadata headers (simai-*)."
     return 1
   fi
   local dest_dir
@@ -184,6 +199,7 @@ ssl_install_custom_handler() {
     return 1
   fi
 
+  progress_step "Preparing SSL directory at ${dest_dir}"
   if [[ "$cert_src" != "$raw_cert_dst" ]]; then
     cp -f "$cert_src" "$raw_cert_dst"
   fi
@@ -195,6 +211,7 @@ ssl_install_custom_handler() {
   fi
 
   # build fullchain
+  progress_step "Building fullchain bundle"
   if [[ -f "$raw_chain_dst" && -s "$raw_chain_dst" ]]; then
     cat "$raw_cert_dst" "$raw_chain_dst" >"$cert_dst"
   else
@@ -208,7 +225,9 @@ ssl_install_custom_handler() {
 
   local chain_arg=""
   [[ -f "$chain_dst" ]] && chain_arg="$chain_dst"
+  progress_step "Applying nginx SSL configuration (redirect=${redirect}, hsts=${hsts})"
   ssl_apply_nginx "$domain" "$cert_dst" "$key_dst" "$chain_arg" "$redirect" "$hsts"
+  progress_step "Reloading nginx"
   echo "===== SSL install summary ====="
   echo "Domain   : ${domain}"
   echo "Type     : custom"
@@ -217,6 +236,7 @@ ssl_install_custom_handler() {
   [[ -n "$chain_arg" ]] && echo "Chain    : ${chain_arg}"
   echo "Redirect : ${redirect}"
   echo "HSTS     : ${hsts}"
+  progress_done "Done"
 }
 
 ssl_renew_handler() {
@@ -225,28 +245,33 @@ ssl_renew_handler() {
   if ! domain=$(ssl_select_domain); then
     return 1
   fi
+  progress_init 5
   domain="${PARSED_ARGS[domain]:-$domain}"
   require_args "domain"
   domain="${PARSED_ARGS[domain]}"
+  progress_step "Validating domain and loading site metadata"
   if ! validate_domain "$domain"; then
     return 1
   fi
   if ! require_site_exists "$domain"; then
     return 1
   fi
+  progress_step "Checking certbot availability"
   if ! command -v certbot >/dev/null 2>&1; then
     error "certbot is not installed"
     return 1
   fi
   ssl_site_context "$domain" || return 1
+  progress_step "Requesting renewal from Let's Encrypt"
   local webroot="${SITE_SSL_ROOT}/public"
-  info "Renewing certificate for ${domain}"
   if ! certbot certonly --keep-until-expiring --force-renewal --non-interactive --agree-tos --webroot -w "$webroot" -d "$domain" >>"$LOG_FILE" 2>&1; then
     error "Renew failed for ${domain}; see ${LOG_FILE}"
     return 1
   fi
+  progress_step "Reloading nginx"
   systemctl reload nginx >>"$LOG_FILE" 2>&1 || true
   echo "Renewed certificate for ${domain}"
+  progress_done "Done"
 }
 
 ssl_remove_handler() {
@@ -260,7 +285,7 @@ ssl_remove_handler() {
   domain="${PARSED_ARGS[domain]}"
   local delete_cert="${PARSED_ARGS[delete-cert]:-no}"
   local confirm="${PARSED_ARGS[confirm]:-}"
-  if ! validate_domain "$domain"; then
+  if ! validate_domain "$domain" "allow"; then
     return 1
   fi
   if ! require_site_exists "$domain"; then
@@ -303,7 +328,7 @@ ssl_status_handler() {
   PARSED_ARGS[domain]="$domain"
   require_args "domain"
   domain="${PARSED_ARGS[domain]}"
-  if ! validate_domain "$domain"; then
+  if ! validate_domain "$domain" "allow"; then
     return 1
   fi
   if ! require_site_exists "$domain"; then

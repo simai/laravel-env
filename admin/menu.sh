@@ -121,6 +121,10 @@ run_menu() {
       run_command "$section" "$cmd" "${args[@]}"
       rc=$?
       set -e
+      if [[ $rc -eq ${SIMAI_RC_MENU_RELOAD:-88} ]]; then
+        info "Restarting menu..."
+        exec "${SCRIPT_DIR}/simai-admin.sh" menu
+      fi
       echo "---- done (${section} ${cmd}), exit=${rc} ----"
       if [[ $rc -ne 0 ]]; then
         warn "Command failed with exit code ${rc}"

@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - ssl letsencrypt now reaches certbot for static sites; helpers return success explicitly to avoid false exits under `set -e`.
 - read_site_metadata and ssl_site_context avoid non-zero returns on normal paths.
+### Improved
+- Added step-based progress output for SSL issue/install/renew flows to make long operations transparent.
+- Menu/self-update stability: sandboxed handlers now signal menu reload via a dedicated return code without terminating the menu loop.
 
 ## [0.7.21] - 2025-12-29
 ### Fixed

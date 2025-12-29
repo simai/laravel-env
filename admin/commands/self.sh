@@ -5,14 +5,19 @@ self_update_handler() {
   local updater="${SCRIPT_DIR}/update.sh"
   if [[ ! -x "$updater" ]]; then
     error "Updater not found or not executable at ${updater}"
-    exit 1
+    return 1
   fi
   info "Running updater ${updater}"
+  progress_init 2
+  progress_step "Downloading and applying update"
   "$updater"
   if [[ "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
+    progress_step "Reloading admin menu"
     info "Reloading admin menu after update"
-    exec "${SCRIPT_DIR}/simai-admin.sh" menu
+    return "${SIMAI_RC_MENU_RELOAD:-88}"
   fi
+  progress_done "Update completed"
+  return 0
 }
 
 self_version_handler() {
