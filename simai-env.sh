@@ -31,13 +31,14 @@ APT_UPDATED=0
 PHP_BIN=""
 QUEUE_TEMPLATE="${SCRIPT_DIR}/systemd/laravel-queue.service"
 NGINX_TEMPLATE="${SCRIPT_DIR}/templates/nginx-laravel.conf"
+ALLOW_RESERVED_DOMAIN=0
 
 usage() {
   cat <<USAGE
 Usage:
-  simai-env.sh [install] --domain example.com --project-name myapp [options]
-  simai-env.sh --existing --path /home/simai/www/myapp --domain example.com [options]
-  simai-env.sh clean --project-name myapp --domain example.com [clean options]
+  simai-env.sh [install] --domain <domain> --project-name <project> [options]
+  simai-env.sh --existing --path /home/simai/www/<project> --domain <domain> [options]
+  simai-env.sh clean --project-name <project> --domain <domain> [clean options]
 
 Install options:
   --domain <fqdn>            Server name for nginx
@@ -57,6 +58,7 @@ Install options:
   --silent                   Minimize console output
   --force                    Continue when non-critical checks fail
   --log-file <path>          Path for install log (default: /var/log/simai-env.log)
+  --allow-reserved-domain    Permit reserved domains (example.com/.net/.org) - not recommended
 
 Clean options:
   clean                      Run cleanup mode
@@ -67,9 +69,9 @@ Clean options:
   --php <version>            PHP version used for pool cleanup
 
 Examples:
-  simai-env.sh --domain example.com --project-name blog --db-name blogdb --php 8.3
+  simai-env.sh --domain <domain> --project-name blog --db-name blogdb --php 8.3
   simai-env.sh --existing --path /home/simai/www/app --domain app.local --php 8.1
-  simai-env.sh clean --project-name blog --domain example.com --remove-files --drop-db --confirm
+  simai-env.sh clean --project-name blog --domain <domain> --remove-files --drop-db --confirm
 USAGE
 }
 
@@ -142,6 +144,14 @@ validate_domain() {
     error "Domain must contain at least one dot (e.g. example.com)"
     return 1
   fi
+  case "$domain_lc" in
+    example.com|example.net|example.org)
+      warn "Domain ${domain_lc} is reserved for documentation/tests."
+      if [[ "${ALLOW_RESERVED_DOMAIN:-0}" != "1" ]]; then
+        fail "Use --allow-reserved-domain yes to continue with reserved domains."
+      fi
+      ;;
+  esac
   return 0
 }
 
@@ -261,6 +271,10 @@ parse_args() {
         ;;
       --drop-db-user)
         DROP_DB_USER=1
+        shift
+        ;;
+      --allow-reserved-domain)
+        ALLOW_RESERVED_DOMAIN=1
         shift
         ;;
       --confirm)

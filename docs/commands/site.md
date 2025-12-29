@@ -8,7 +8,8 @@ Create nginx vhost and PHP-FPM pool for an existing project path.
 Options:
 - `--domain` (required)
 - `--project-name` (optional; derived from domain if missing)
-- `--path` (optional; default `/home/simai/www/<project>`)
+- `--path` (optional; default uses path style under `/home/simai/www/`)
+- `--path-style` (`slug`|`domain`) controls default path when `--path` is not set. Default is `slug`; `domain` keeps dots (e.g., `/home/simai/www/example.com`). Persist via `/etc/simai-env.conf` with `SIMAI_DEFAULT_PATH_STYLE=domain`.
 - `--profile` (`generic`|`laravel`|`alias`, default `generic`)
 - `--php` (optional; choose from installed if omitted)
 - DB (optional): `--create-db=yes|no`, `--db-name`, `--db-user`, `--db-pass` (defaults from project; password generated)
@@ -17,6 +18,7 @@ Behavior:
 - Generic uses placeholder and `public` root; Laravel requires `artisan`. Alias points the domain to an existing site (reuses its PHP-FPM pool/root, no DB/pool creation).
 - Creates PHP-FPM pool and nginx vhost; installs `public/healthcheck.php` (non-alias).
 - If `create-db=yes`, creates DB/user, writes `.env` for generic profile, prints summary with credentials (not logged).
+- Project ID (slug) is still used for pools/cron/queue/sockets/logs even if the path style uses the domain.
 - `/healthcheck.php` is localhost-only by default; test with `curl -i -H "Host: <domain>" http://127.0.0.1/healthcheck.php`.
 
 ## remove
@@ -43,9 +45,9 @@ In non-menu mode, `--confirm yes` is required only when any destructive flags ar
 
 Examples:
 - Safe remove (no confirm needed):
-  `simai-admin.sh site remove --domain example.com --remove-files no --drop-db no --drop-db-user no`
+  `simai-admin.sh site remove --domain <domain> --remove-files no --drop-db no --drop-db-user no`
 - Destructive remove (confirm required):
-  `simai-admin.sh site remove --domain example.com --remove-files yes --confirm yes`
+  `simai-admin.sh site remove --domain <domain> --remove-files yes --confirm yes`
 
 ## list
 List domains from nginx sites-available with profile, PHP version, root/alias target, and brief SSL status (off/LE:YYYY-MM-DD/custom).

@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.14] - 2025-12-29
+### Fixed/Docs
+- Removed misleading example.com/myapp install hints; usage/examples now use placeholders and note installer does not create sites.
+- Added reserved-domain guard for example.com/.net/.org with explicit opt-in.
+
+## [0.7.15] - 2025-12-29
+### Added
+- Site add supports domain-based default path style via `--path-style domain` or `SIMAI_DEFAULT_PATH_STYLE=domain` in `/etc/simai-env.conf`; slug remains default for IDs/pools/cron.
+
+## [0.7.13] - 2025-12-29
+### Added
+- `backup export` command (config-only bundle) with optional nginx references and menu entry under Backup / Migrate.
+
+### Fixed
+- More reliable insertion of `# simai-php` metadata during nginx socket patching.
+- `php list` table widened for longer FPM statuses.
+
 ## [0.7.12] - 2025-12-29
 ### Fixed
 - Robust insertion of `# simai-php` metadata when patching nginx sockets during PHP switches.

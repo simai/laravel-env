@@ -6,6 +6,17 @@ site_add_handler() {
   require_args "domain"
 
   local domain="${PARSED_ARGS[domain]}"
+  local path_style="${SIMAI_DEFAULT_PATH_STYLE:-slug}"
+  if [[ -n "${PARSED_ARGS[path-style]:-}" ]]; then
+    path_style="${PARSED_ARGS[path-style]}"
+  fi
+  case "$path_style" in
+    slug|domain) ;;
+    *)
+      error "Invalid path-style: ${path_style} (use slug or domain)"
+      return 1
+      ;;
+  esac
   if ! validate_domain "$domain"; then
     return 1
   fi
@@ -21,7 +32,17 @@ site_add_handler() {
     project=$(project_slug_from_domain "$domain")
     info "project-name not provided; using ${project}"
   fi
-  local path="${PARSED_ARGS[path]:-${WWW_ROOT}/${project}}"
+  local path="${PARSED_ARGS[path]:-}"
+  if [[ -z "$path" ]]; then
+    if [[ "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
+      path_style=$(select_from_list "Select project directory style" "$path_style" "slug" "domain")
+    fi
+    if [[ "$path_style" == "domain" ]]; then
+      path="${WWW_ROOT}/${domain}"
+    else
+      path="${WWW_ROOT}/${project}"
+    fi
+  fi
   if ! validate_path "$path"; then
     return 1
   fi
@@ -333,7 +354,7 @@ site_list_handler() {
   printf "%s\n" "$sep"
 }
 
-register_cmd "site" "add" "Create site scaffolding (nginx/php-fpm)" "site_add_handler" "domain" "project-name= path= php= profile= create-db= db-name= db-user= db-pass="
+register_cmd "site" "add" "Create site scaffolding (nginx/php-fpm)" "site_add_handler" "domain" "project-name= path= php= profile= create-db= db-name= db-user= db-pass= path-style="
 register_cmd "site" "remove" "Remove site resources" "site_remove_handler" "" "domain= project-name= path= remove-files= drop-db= drop-db-user= confirm="
 register_cmd "site" "set-php" "Switch PHP version for site" "site_set_php_handler" "" "project-name= domain= php= keep-old-pool="
 register_cmd "site" "list" "List configured sites" "site_list_handler" "" ""

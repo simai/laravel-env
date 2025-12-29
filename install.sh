@@ -54,4 +54,7 @@ chmod +x "$INSTALL_DIR/simai-admin.sh"
 chmod +x "$INSTALL_DIR/update.sh"
 
 echo "Installed to $INSTALL_DIR"
-echo "Run: sudo $INSTALL_DIR/simai-env.sh --domain example.com --project-name myapp --db-pass secret"
+echo "Next: create your first site (installer does NOT create any sites automatically)."
+echo "Example:"
+echo "  sudo $INSTALL_DIR/simai-admin.sh site add --domain <your-domain> --profile generic --php 8.2 --path /home/simai/www/<project>"
+echo "Note: Existing nginx configs in /etc/nginx/sites-available stay untouched."

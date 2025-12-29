@@ -37,8 +37,8 @@ Reverts nginx to HTTP-only and reloads.
 Confirmation: In non-menu mode, `--confirm yes` is required only when `--delete-cert yes`.
 
 Examples:
-- Remove SSL from config only (no confirm): `simai-admin.sh ssl remove --domain example.com --delete-cert no`
-- Remove SSL and delete certificate files (confirm required): `simai-admin.sh ssl remove --domain example.com --delete-cert yes --confirm yes`
+- Remove SSL from config only (no confirm): `simai-admin.sh ssl remove --domain <domain> --delete-cert no`
+- Remove SSL and delete certificate files (confirm required): `simai-admin.sh ssl remove --domain <domain> --delete-cert yes --confirm yes`
 
 ## status
 Show cert type/paths/dates for domain.

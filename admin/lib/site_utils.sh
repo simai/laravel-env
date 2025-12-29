@@ -112,6 +112,14 @@ validate_domain() {
     error "Domain must contain at least one dot (e.g. example.com)"
     return 1
   fi
+  case "$domain_lc" in
+    example.com|example.net|example.org)
+      warn "Domain ${domain_lc} is reserved for documentation/tests. Set ALLOW_RESERVED_DOMAIN=yes to proceed."
+      if [[ "${ALLOW_RESERVED_DOMAIN:-no}" != "yes" ]]; then
+        return 1
+      fi
+      ;;
+  esac
   return 0
 }
 
@@ -504,6 +512,29 @@ site_ssl_brief() {
   else
     echo "${type}"
   fi
+}
+
+site_ssl_info() {
+  local domain="$1"
+  local cfg="/etc/nginx/sites-available/${domain}.conf"
+  local enabled="false" type="none"
+  if [[ "${SITE_META[ssl]:-off}" == "on" ]]; then
+    enabled="true"
+    if grep -q "/etc/letsencrypt/live/${domain}/" "$cfg" 2>/dev/null; then
+      type="letsencrypt"
+    elif grep -q "/etc/nginx/ssl/${domain}/" "$cfg" 2>/dev/null; then
+      type="custom"
+    else
+      type="unknown"
+    fi
+  fi
+  echo "${enabled} ${type}"
+}
+
+has_simai_metadata() {
+  local domain="$1"
+  local cfg="/etc/nginx/sites-available/${domain}.conf"
+  [[ -f "$cfg" ]] && grep -q "^# simai-" "$cfg"
 }
 
 switch_site_php() {

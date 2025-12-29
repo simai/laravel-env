@@ -54,7 +54,11 @@ run_menu() {
     local idx=1
     while IFS= read -r s; do
       sections+=("$s")
-      echo "  [$idx] $s"
+      local label="$s"
+      if [[ "$s" == "backup" ]]; then
+        label="Backup / Migrate"
+      fi
+      echo "  [$idx] $label"
       ((idx++))
     done < <(list_sections)
     echo "  [0] Exit"

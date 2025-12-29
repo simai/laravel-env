@@ -10,6 +10,7 @@
 - Node.js (NodeSource; version via `--node-version`, default 20)
 - composer
 - utilities: git, curl, unzip, htop, rsyslog, logrotate, sudo, certbot
+- config-only backup export for migration (`simai-admin.sh backup export`)
 
 ## Default layout
 - user: `simai`
@@ -23,14 +24,15 @@
 ### Quick install
  - One-liner (default path `/root/simai-env`):
  ```bash
- curl -fsSL https://raw.githubusercontent.com/simai/simai-env/main/install.sh | sudo bash && \
- sudo /root/simai-env/simai-env.sh --domain example.com --project-name myapp --db-pass secret --php 8.2 --run-migrations --optimize
- ```
+curl -fsSL https://raw.githubusercontent.com/simai/simai-env/main/install.sh | sudo bash && \
+sudo /root/simai-env/simai-env.sh --domain <your-domain> --project-name <project> --db-pass secret --php 8.2 --run-migrations --optimize
+```
  - Two-step variant:
  ```bash
- curl -fsSL https://raw.githubusercontent.com/simai/simai-env/main/install.sh | sudo bash
- sudo /root/simai-env/simai-env.sh --domain example.com --project-name myapp --db-pass secret
- ```
+curl -fsSL https://raw.githubusercontent.com/simai/simai-env/main/install.sh | sudo bash
+sudo /root/simai-env/simai-env.sh --domain <your-domain> --project-name <project> --db-pass secret
+```
+Note: the installer does not create sites automatically; existing nginx configs are left untouched.
  To pin a specific branch or tag, override `VERSION` (branch) or `REF` (tag), or change `INSTALL_DIR`:
  ```bash
  curl -fsSL https://raw.githubusercontent.com/simai/simai-env/main/install.sh | \
@@ -51,9 +53,9 @@ curl -fsSL https://raw.githubusercontent.com/simai/simai-env/main/update.sh | su
 
 - Direct commands:
 ```bash
-sudo /root/simai-env/simai-admin.sh site add --domain example.com --project-name myapp --php 8.2
+sudo /root/simai-env/simai-admin.sh site add --domain <your-domain> --project-name <project> --php 8.2
 sudo /root/simai-env/simai-admin.sh db create --name simai_app --user simai --pass secret
-sudo /root/simai-env/simai-admin.sh ssl letsencrypt --domain example.com --email admin@example.com
+sudo /root/simai-env/simai-admin.sh ssl letsencrypt --domain <your-domain> --email admin@<your-domain>
 sudo /root/simai-env/simai-admin.sh php list
 sudo /root/simai-env/simai-admin.sh logs admin --lines 200
 ```
@@ -80,7 +82,7 @@ See more in `docs/admin.md` and `docs/commands/`.
 
 ### New project (mode A)
 ```bash
-./simai-env.sh --domain example.com --project-name myapp \
+./simai-env.sh --domain <your-domain> --project-name <project> \
   --db-name simai_app --db-user simai --db-pass secret \
   --php 8.2 --run-migrations --optimize
 ```
@@ -95,7 +97,7 @@ Actions: validates Laravel structure, runs `composer install`, creates/updates `
 
 ### Cleanup mode
 ```bash
-./simai-env.sh clean --project-name myapp --domain example.com \
+./simai-env.sh clean --project-name myapp --domain <your-domain> \
   --remove-files --drop-db --drop-db-user --confirm
 ```
 Removes nginx config and symlink, the php-fpm pool for the project, cron entry, queue systemd unit, database/user (when flags are set), and the project directory (when flagged). Cleanup requires the `--confirm` flag to run.

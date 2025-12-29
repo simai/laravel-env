@@ -4,6 +4,10 @@ set -euo pipefail
 LOG_FILE=${LOG_FILE:-/var/log/simai-admin.log}
 AUDIT_LOG_FILE=${AUDIT_LOG_FILE:-/var/log/simai-audit.log}
 ADMIN_USER=${ADMIN_USER:-simai}
+if [[ -f /etc/simai-env.conf ]]; then
+  # shellcheck disable=SC1091
+  source /etc/simai-env.conf
+fi
 
 declare -Ag CMD_HANDLERS=()
 declare -Ag CMD_DESCRIPTIONS=()
