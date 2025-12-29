@@ -237,7 +237,7 @@ site_remove_handler() {
   if [[ -z "$domain" ]]; then
     require_args "domain"
   fi
-  if ! validate_domain "$domain"; then
+  if ! validate_domain "$domain" "allow"; then
     return 1
   fi
   if [[ -z "$project" ]]; then

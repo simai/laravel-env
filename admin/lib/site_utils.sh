@@ -86,7 +86,7 @@ generate_password() {
 }
 
 validate_domain() {
-  local domain="$1"
+  local domain="$1" policy="${2:-block}"
   local domain_lc
   domain_lc=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
   if [[ -z "$domain_lc" ]]; then
@@ -115,8 +115,14 @@ validate_domain() {
   fi
   case "$domain_lc" in
     example.com|example.net|example.org)
-      warn "Domain ${domain_lc} is reserved for documentation/tests. Set ALLOW_RESERVED_DOMAIN=yes to proceed."
-      if [[ "${ALLOW_RESERVED_DOMAIN:-no}" != "yes" ]]; then
+      if [[ "$policy" == "allow" ]]; then
+        warn "Domain ${domain_lc} is reserved; proceeding (cleanup/status)."
+        return 0
+      fi
+      if [[ "${ALLOW_RESERVED_DOMAIN:-no}" == "yes" ]]; then
+        warn "Domain ${domain_lc} is reserved; proceeding because ALLOW_RESERVED_DOMAIN=yes."
+      else
+        warn "Domain ${domain_lc} is reserved for documentation/tests. Set ALLOW_RESERVED_DOMAIN=yes to proceed."
         return 1
       fi
       ;;

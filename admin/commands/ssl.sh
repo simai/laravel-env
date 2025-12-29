@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ssl_select_domain() {
+  local policy="${1:-block}"
   local domain="${PARSED_ARGS[domain]:-}"
   if [[ -z "$domain" && "${SIMAI_ADMIN_MENU:-0}" == "1" ]]; then
     local sites=() filtered=()
@@ -13,7 +14,7 @@ ssl_select_domain() {
     domain=$(prompt "domain")
   fi
   [[ -z "$domain" ]] && return 1
-  if ! validate_domain "$domain"; then
+  if ! validate_domain "$domain" "$policy"; then
     return 1
   fi
   if ! require_site_exists "$domain"; then
@@ -125,7 +126,7 @@ ssl_issue_handler() {
 ssl_install_custom_handler() {
   parse_kv_args "$@"
   local domain
-  if ! domain=$(ssl_select_domain); then
+  if ! domain=$(ssl_select_domain "allow"); then
     return 1
   fi
   local redirect="${PARSED_ARGS[redirect]:-no}"
@@ -243,7 +244,7 @@ ssl_renew_handler() {
 ssl_remove_handler() {
   parse_kv_args "$@"
   local domain
-  if ! domain=$(ssl_select_domain); then
+  if ! domain=$(ssl_select_domain "allow"); then
     return 1
   fi
   domain="${PARSED_ARGS[domain]:-$domain}"
@@ -283,7 +284,7 @@ ssl_remove_handler() {
 ssl_status_handler() {
   parse_kv_args "$@"
   local domain
-  if ! domain=$(ssl_select_domain); then
+  if ! domain=$(ssl_select_domain "allow"); then
     return 1
   fi
   domain="${PARSED_ARGS[domain]:-$domain}"
