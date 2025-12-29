@@ -1,14 +1,19 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.7.14] - 2025-12-29
-### Fixed/Docs
-- Removed misleading example.com/myapp install hints; usage/examples now use placeholders and note installer does not create sites.
-- Added reserved-domain guard for example.com/.net/.org with explicit opt-in.
+## [0.7.16] - 2025-12-29
+### Changed
+- Default site directory naming now uses the domain (`/home/simai/www/<domain>`); slug paths remain available via `--path-style slug` and slug stays the ID for pools/cron/queue/socket names.
+- Safeguard reuses existing slug/domain directories (with warnings) to avoid duplicate paths when switching styles.
 
 ## [0.7.15] - 2025-12-29
 ### Added
 - Site add supports domain-based default path style via `--path-style domain` or `SIMAI_DEFAULT_PATH_STYLE=domain` in `/etc/simai-env.conf`; slug remains default for IDs/pools/cron.
+
+## [0.7.14] - 2025-12-29
+### Fixed/Docs
+- Removed misleading example.com/myapp install hints; usage/examples now use placeholders and note installer does not create sites.
+- Added reserved-domain guard for example.com/.net/.org with explicit opt-in.
 
 ## [0.7.13] - 2025-12-29
 ### Added

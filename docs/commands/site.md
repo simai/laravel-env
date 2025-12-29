@@ -8,8 +8,8 @@ Create nginx vhost and PHP-FPM pool for an existing project path.
 Options:
 - `--domain` (required)
 - `--project-name` (optional; derived from domain if missing)
-- `--path` (optional; default uses path style under `/home/simai/www/`)
-- `--path-style` (`slug`|`domain`) controls default path when `--path` is not set. Default is `slug`; `domain` keeps dots (e.g., `/home/simai/www/example.com`). Persist via `/etc/simai-env.conf` with `SIMAI_DEFAULT_PATH_STYLE=domain`.
+ - `--path` (optional; default uses path style under `/home/simai/www/`)
+ - `--path-style` (`slug`|`domain`) controls default path when `--path` is not set. Default is `domain` (e.g., `/home/simai/www/example.com`). Use `--path-style slug` to restore legacy slug paths or set `/etc/simai-env.conf` with `SIMAI_DEFAULT_PATH_STYLE=domain|slug`.
 - `--profile` (`generic`|`laravel`|`alias`, default `generic`)
 - `--php` (optional; choose from installed if omitted)
 - DB (optional): `--create-db=yes|no`, `--db-name`, `--db-user`, `--db-pass` (defaults from project; password generated)
@@ -18,7 +18,8 @@ Behavior:
 - Generic uses placeholder and `public` root; Laravel requires `artisan`. Alias points the domain to an existing site (reuses its PHP-FPM pool/root, no DB/pool creation).
 - Creates PHP-FPM pool and nginx vhost; installs `public/healthcheck.php` (non-alias).
 - If `create-db=yes`, creates DB/user, writes `.env` for generic profile, prints summary with credentials (not logged).
-- Project ID (slug) is still used for pools/cron/queue/sockets/logs even if the path style uses the domain.
+ - Project ID (slug) is still used for pools/cron/queue/sockets/logs even if the path style uses the domain.
+ - If an existing slug/domain directory is found, the tool reuses it to avoid duplicates and warns accordingly.
 - `/healthcheck.php` is localhost-only by default; test with `curl -i -H "Host: <domain>" http://127.0.0.1/healthcheck.php`.
 
 ## remove
