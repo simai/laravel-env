@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2025-12-30
+### Added/Changed
+- Admin CLI now has a unified spinner/timing `run_long` helper for long-running commands; SSL/certbot operations use it with progress steps.
+- Copilot instructions enforce run_long + progress steps for long operations to avoid silent waits.
+### Fixed
+- Nginx SSL redirect/HSTS insertion now emits valid directives without stray escapes.
+
 ## [0.7.30] - 2025-12-30
 ### Fixed
 - Fixed bootstrap/install failure where run_long could not execute commands prefixed with env assignments (e.g., DEBIAN_FRONTEND=noninteractive).

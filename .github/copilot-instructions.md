@@ -32,6 +32,12 @@
 - Table rule: when showing existing entities (sites, SSL certs, PHP versions/pools, cron jobs, queues, DBs/users), render a bordered table (`+---+` separators, header row, closing border) with only the key columns for quick diagnostics. Example columns: sites → domain/profile/PHP/root-or-alias; SSL → domain/status/notBefore/notAfter/issuer; PHP → version/status/pool count; cron → project/schedule/command; queues → project/unit/status; DB → name/owner/host/encoding.
 - Color rule: colors only in interactive output. Define ANSI codes as `GREEN=$'\e[32m'`, etc. First pad text to fixed width, then wrap with color to keep table alignment. Use `%s` (not `%b`) when printing colored strings. Do not color logs. If needed, disable colors when stdout is not a TTY (`[[ -t 1 ]]`).
 - Audit rule: every admin command logs start/finish to `/var/log/simai-audit.log` with timestamp, user (`$SUDO_USER` fallback `$USER`), section, command, redacted args (mask keys containing pass/password/secret/token/key/cert), exit code, and correlation ID (`uuidgen` fallback timestamp). Keep file perms 640 root:root; never log secrets to admin log.
+- Progress/long-running rule: any potentially slow external command (apt, curl/download, git fetch/pull, certbot/openssl, tar/composer/systemctl reload/restart, etc.) must run through `run_long "<label>" <cmd...>` with stdout/stderr appended to the log file and a heartbeat on TTY (spinner + elapsed); non-TTY keeps quiet but still logs. Multi-step flows must call `progress_init N` and `progress_step` for each step so the user sees structure. Never leave the user without output during long operations. Example pattern:
+  - progress_init 6
+  - progress_step "Preparing webroot"
+  - run_long "Requesting certificate (staging=no)" certbot ...
+  - progress_step "Reloading nginx"
+  - progress_done "Done"
 
 ## Templates
 - `templates/nginx-laravel.conf`: root `{{PROJECT_ROOT}}/public`, PHP-FPM socket per project (`{{PHP_SOCKET_PROJECT}}` allows aliasing to an existing pool).

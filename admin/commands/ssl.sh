@@ -119,7 +119,7 @@ ssl_issue_handler() {
   local cmd=(certbot certonly --webroot -w "$webroot" -d "$domain" --non-interactive --agree-tos -m "$email" --keep-until-expiring)
   [[ "$staging" == "yes" ]] && cmd+=(--staging)
   progress_step "Requesting certificate from Let's Encrypt (staging=${staging})"
-  if ! "${cmd[@]}" >>"$LOG_FILE" 2>&1; then
+  if ! run_long "Requesting certificate from Let's Encrypt (staging=${staging})" "${cmd[@]}"; then
     error "Certbot failed. Check: simai-admin.sh logs letsencrypt"
     return 1
   fi
@@ -273,7 +273,7 @@ ssl_renew_handler() {
   progress_step "Preparing ACME webroot"
   local webroot="${SITE_SSL_ROOT}/public"
   progress_step "Requesting renewal from Let's Encrypt"
-  if ! certbot certonly --keep-until-expiring --force-renewal --non-interactive --agree-tos --webroot -w "$webroot" -d "$domain" >>"$LOG_FILE" 2>&1; then
+  if ! run_long "Renewing certificate for ${domain}" certbot certonly --keep-until-expiring --force-renewal --non-interactive --agree-tos --webroot -w "$webroot" -d "$domain"; then
     error "Renew failed for ${domain}; see ${LOG_FILE}"
     return 1
   fi
@@ -317,7 +317,7 @@ ssl_remove_handler() {
   create_nginx_site "$domain" "$SITE_SSL_PROJECT" "$SITE_SSL_ROOT" "$SITE_SSL_PHP" "$template" "$SITE_SSL_PROFILE" "" "$SITE_SSL_SOCKET_PROJECT" "" "" "" "no" "no"
   if [[ "$delete_cert" == "yes" ]]; then
     if command -v certbot >/dev/null 2>&1; then
-      certbot delete --cert-name "$domain" --non-interactive >>"$LOG_FILE" 2>&1 || true
+      run_long "Deleting certbot certificate for ${domain}" certbot delete --cert-name "$domain" --non-interactive || true
     fi
     rm -rf "/etc/nginx/ssl/${domain}" >>"$LOG_FILE" 2>&1 || true
   fi

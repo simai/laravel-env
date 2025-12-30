@@ -68,6 +68,56 @@ info() { log "INFO" "$@"; }
 warn() { log "WARN" "$@"; }
 error() { log "ERROR" "$@"; }
 
+run_long() {
+  local desc="$1"; shift
+  local has_tty=0
+  [[ -t 1 && -r /dev/tty && -w /dev/tty ]] && has_tty=1
+  local start
+  start=$(date +%s)
+  mkdir -p "$(dirname "$LOG_FILE")"
+  echo "$(date +"%Y-%m-%dT%H:%M:%S") [INFO] ${desc}" >>"$LOG_FILE"
+  if command -v env >/dev/null 2>&1; then
+    env "$@" >>"$LOG_FILE" 2>&1 &
+  else
+    "$@" >>"$LOG_FILE" 2>&1 &
+  fi
+  local cmd_pid=$!
+  local spinner='|/-\'
+  local i=0
+  local interrupted=0
+  trap 'interrupted=1; kill '"$cmd_pid"' 2>/dev/null || true' INT TERM
+  while kill -0 "$cmd_pid" 2>/dev/null; do
+    if [[ $has_tty -eq 1 ]]; then
+      local elapsed=$(( $(date +%s) - start ))
+      printf "\r[%s] %s... %ss" "${spinner:i%4:1}" "$desc" "$elapsed" >/dev/tty
+      i=$((i+1))
+    fi
+    sleep 1
+  done
+  wait "$cmd_pid"
+  local rc=$?
+  trap - INT TERM
+  local elapsed=$(( $(date +%s) - start ))
+  if [[ $has_tty -eq 1 ]]; then
+    printf "\r" >/dev/tty
+  fi
+  if [[ $interrupted -eq 1 ]]; then
+    [[ $has_tty -eq 1 ]] && echo "Interrupted" >/dev/tty || echo "Interrupted"
+    return 130
+  fi
+  if [[ $rc -ne 0 ]]; then
+    [[ $has_tty -eq 1 ]] && echo "[ERROR] ${desc}" >/dev/tty || echo "[ERROR] ${desc}"
+    tail -n 80 "$LOG_FILE" 2>/dev/null || true
+    return $rc
+  fi
+  if [[ $has_tty -eq 1 ]]; then
+    printf "[OK] %s (%.0fs)\n" "$desc" "$elapsed" >/dev/tty
+  else
+    echo "[OK] ${desc} (${elapsed}s)"
+  fi
+  return 0
+}
+
 ensure_root() {
   if [[ $EUID -ne 0 ]]; then
     echo "Please run as root" >&2

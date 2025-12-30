@@ -288,15 +288,20 @@ create_nginx_site() {
         }
 
         if ($hsts eq "yes" && $_ !~ /Strict-Transport-Security/) {
-          insert_before_server_closing("    add_header Strict-Transport-Security \\\"max-age=31536000\\\" always;");
+          insert_before_server_closing("    add_header Strict-Transport-Security \"max-age=31536000\" always;");
         }
 
         if ($redirect eq "yes" && $_ !~ /simai-ssl-redirect/) {
-          my $block = "    # simai-ssl-redirect-start\n    if (\\$scheme != \\\"https\\\") { return 301 https://\\$host\\$request_uri; }\n    # simai-ssl-redirect-end";
+          my $block = "    # simai-ssl-redirect-start\n    if (\$scheme != \"https\") { return 301 https://\$host\$request_uri; }\n    # simai-ssl-redirect-end";
           insert_before_server_closing($block);
         }
       }
     ' "$site_available" || { restore_nginx_backup "$site_available" "$site_enabled" "$backup"; return 1; }
+    if grep -q '\\\$scheme' "$site_available" || grep -q '\\"https\\"' "$site_available"; then
+      error "nginx SSL config contains escaped literals; aborting"
+      restore_nginx_backup "$site_available" "$site_enabled" "$backup"
+      return 1
+    fi
   fi
   ensure_nginx_catchall
   local nginx_test_output
