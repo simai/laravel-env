@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.25] - 2025-12-30
+### Added/Changed
+- Bootstrap mode installs the base stack without creating sites; admin menu runs a preflight and can trigger bootstrap on fresh servers.
+- README simplified to two commands (install + menu); advanced installer details moved to docs/advanced-installer.md.
+### Improved
+- User-facing examples avoid reserved RFC 2606 domains; help text references are generic.
+
 ## [0.7.24] - 2025-12-30
 ### Fixed
 - SSL nginx patch now inserts directives in the server block (no more placement inside location blocks causing invalid configs).

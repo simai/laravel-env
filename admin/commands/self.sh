@@ -20,6 +20,20 @@ self_update_handler() {
   return 0
 }
 
+self_bootstrap_handler() {
+  parse_kv_args "$@"
+  local php="${PARSED_ARGS[php]:-8.2}"
+  local mysql="${PARSED_ARGS[mysql]:-mysql}"
+  local node="${PARSED_ARGS[node-version]:-20}"
+  progress_init 2
+  progress_step "Running bootstrap (php=${php}, mysql=${mysql}, node=${node})"
+  if ! "${SCRIPT_DIR}/simai-env.sh" bootstrap --php "$php" --mysql "$mysql" --node-version "$node"; then
+    progress_done "Bootstrap failed"
+    return 1
+  fi
+  progress_done "Bootstrap completed"
+}
+
 self_version_handler() {
   local local_version="(unknown)"
   local version_file="${SCRIPT_DIR}/VERSION"
@@ -58,3 +72,4 @@ self_version_handler() {
 
 register_cmd "self" "update" "Update simai-env/admin scripts" "self_update_handler" "" ""
 register_cmd "self" "version" "Show local and remote simai-env version" "self_version_handler" "" ""
+register_cmd "self" "bootstrap" "Install base stack (nginx/php/mysql/certbot/etc.) without creating sites" "self_bootstrap_handler" "" "php= mysql= node-version="

@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_URL=${REPO_URL:-https://github.com/simai/simai-env}
 VERSION=${VERSION:-main}           # branch name
-REF=${REF:-refs/heads/${VERSION}}  # override to pin a tag: REF=refs/tags/v1.0.0
+REF=${REF:-refs/heads/${VERSION}}  # override to pin a tag: REF=refs/tags/vX.Y.Z (see GitHub releases/tags)
 INSTALL_DIR=${INSTALL_DIR:-/root/simai-env}
 
 if [[ $EUID -ne 0 && "$INSTALL_DIR" == /root/* ]]; then

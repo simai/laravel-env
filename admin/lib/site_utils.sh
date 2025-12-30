@@ -110,19 +110,19 @@ validate_domain() {
     return 1
   fi
   if [[ "$domain_lc" != *.* ]]; then
-    error "Domain must contain at least one dot (e.g. example.com)"
+    error "Domain must contain at least one dot (e.g. your-domain.tld)"
     return 1
   fi
   case "$domain_lc" in
     example.com|example.net|example.org)
       if [[ "$policy" == "allow" ]]; then
-        warn "Domain ${domain_lc} is reserved; proceeding (cleanup/status)."
+        warn "Domain ${domain_lc} is reserved (RFC 2606); proceeding (cleanup/status)."
         return 0
       fi
       if [[ "${ALLOW_RESERVED_DOMAIN:-no}" == "yes" ]]; then
-        warn "Domain ${domain_lc} is reserved; proceeding because ALLOW_RESERVED_DOMAIN=yes."
+        warn "Domain ${domain_lc} is reserved (RFC 2606); proceeding because ALLOW_RESERVED_DOMAIN=yes."
       else
-        warn "Domain ${domain_lc} is reserved for documentation/tests. Set ALLOW_RESERVED_DOMAIN=yes to proceed."
+        warn "Domain ${domain_lc} is reserved for documentation/tests (RFC 2606). Set ALLOW_RESERVED_DOMAIN=yes to proceed."
         return 1
       fi
       ;;

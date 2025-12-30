@@ -44,9 +44,42 @@ print_version_banner() {
   printf "%s\n" "$sep"
 }
 
+preflight_bootstrap() {
+  if [[ "${SIMAI_PREFLIGHT_DONE:-0}" -eq 1 ]]; then
+    return
+  fi
+  SIMAI_PREFLIGHT_DONE=1
+  local missing=()
+  command -v nginx >/dev/null 2>&1 || missing+=("nginx")
+  if ! compgen -G "/etc/php/*/fpm/php-fpm.conf" >/dev/null 2>&1; then
+    missing+=("php-fpm")
+  fi
+  if ! command -v mysql >/dev/null 2>&1 && ! command -v mysqld >/dev/null 2>&1; then
+    missing+=("mysql-server")
+  fi
+  command -v certbot >/dev/null 2>&1 || missing+=("certbot")
+  if [[ ${#missing[@]} -eq 0 ]]; then
+    return
+  fi
+  echo "Missing components detected: ${missing[*]}"
+  local choice
+  choice=$(select_from_list "Install required packages now?" "yes" "yes" "no")
+  [[ -z "$choice" ]] && choice="yes"
+  if [[ "$choice" == "yes" ]]; then
+    set +e
+    run_command self bootstrap
+    local rc=$?
+    set -e
+    if [[ $rc -ne 0 ]]; then
+      warn "Bootstrap failed with exit code ${rc}; you can rerun from menu (self -> bootstrap)."
+    fi
+  fi
+}
+
 run_menu() {
   export SIMAI_ADMIN_MENU=1
   print_version_banner
+  preflight_bootstrap
   while true; do
     echo
     echo "Select section:"

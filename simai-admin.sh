@@ -17,7 +17,7 @@ simai-admin.sh <section> <command> [options]
 simai-admin.sh menu      # interactive menu
 
 Examples:
-  simai-admin.sh site add --domain example.com --project-name myapp --php 8.2
+  simai-admin.sh site add --domain your-domain.tld --profile generic --php 8.2
   simai-admin.sh db create --name simai_app --user simai --pass secret
 USAGE
 }

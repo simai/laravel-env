@@ -39,6 +39,7 @@ Usage:
   simai-env.sh [install] --domain <domain> --project-name <project> [options]
   simai-env.sh --existing --path /home/simai/www/<project> --domain <domain> [options]
   simai-env.sh clean --project-name <project> --domain <domain> [clean options]
+  simai-env.sh bootstrap [--php 8.2] [--mysql mysql|percona] [--node-version 20] [--silent]
 
 Install options:
   --domain <fqdn>            Server name for nginx
@@ -58,7 +59,7 @@ Install options:
   --silent                   Minimize console output
   --force                    Continue when non-critical checks fail
   --log-file <path>          Path for install log (default: /var/log/simai-env.log)
-  --allow-reserved-domain    Permit reserved domains (example.com/.net/.org) - not recommended
+  --allow-reserved-domain    Permit reserved domains (RFC 2606) - not recommended
 
 Clean options:
   clean                      Run cleanup mode
@@ -90,6 +91,31 @@ log() {
 info() { log "INFO" "$@"; }
 warn() { log "WARN" "$@"; }
 error() { log "ERROR" "$@"; }
+
+progress_init() {
+  PROGRESS_TOTAL=$1
+  PROGRESS_CURRENT=0
+}
+
+progress_step() {
+  local msg="$*"
+  if [[ -z "${PROGRESS_TOTAL:-}" ]]; then
+    info "[?/?] ${msg}"
+    return
+  fi
+  PROGRESS_CURRENT=$((PROGRESS_CURRENT+1))
+  info "[${PROGRESS_CURRENT}/${PROGRESS_TOTAL}] ${msg}"
+}
+
+progress_done() {
+  local msg="${1:-Done}"
+  if [[ -n "${PROGRESS_TOTAL:-}" && -n "${PROGRESS_CURRENT:-}" ]]; then
+    info "[${PROGRESS_TOTAL}/${PROGRESS_TOTAL}] ${msg}"
+  else
+    info "${msg}"
+  fi
+  unset PROGRESS_TOTAL PROGRESS_CURRENT
+}
 
 fail() {
   error "$*"
@@ -141,14 +167,14 @@ validate_domain() {
     return 1
   fi
   if [[ "$domain_lc" != *.* ]]; then
-    error "Domain must contain at least one dot (e.g. example.com)"
+    error "Domain must contain at least one dot (e.g. your-domain.tld)"
     return 1
   fi
   case "$domain_lc" in
     example.com|example.net|example.org)
-      warn "Domain ${domain_lc} is reserved for documentation/tests."
+      warn "Domain ${domain_lc} is reserved for documentation/tests (RFC 2606)."
       if [[ "${ALLOW_RESERVED_DOMAIN:-0}" != "1" ]]; then
-        fail "Use --allow-reserved-domain yes to continue with reserved domains."
+        fail "Set --allow-reserved-domain yes to continue with reserved domains (not recommended)."
       fi
       ;;
   esac
@@ -198,6 +224,10 @@ parse_args() {
     case "$1" in
       install|deploy)
         ACTION=install
+        shift
+        ;;
+      bootstrap)
+        ACTION=bootstrap
         shift
         ;;
       clean)
@@ -316,6 +346,9 @@ parse_args() {
 }
 
 ensure_defaults() {
+  if [[ $ACTION == "bootstrap" ]]; then
+    return 0
+  fi
   if [[ -z $PROJECT_NAME && -n $PROJECT_PATH ]]; then
     PROJECT_NAME=$(basename "$PROJECT_PATH")
   fi
@@ -393,6 +426,28 @@ install_nginx() {
   info "Installing nginx"
   DEBIAN_FRONTEND=noninteractive apt-get install -y nginx >>"$LOG_FILE" 2>&1
   systemctl enable --now nginx >>"$LOG_FILE" 2>&1 || true
+}
+
+ensure_nginx_catchall_safe() {
+  local catchall_avail="/etc/nginx/sites-available/000-catchall.conf"
+  local catchall_enabled="/etc/nginx/sites-enabled/000-catchall.conf"
+  if [[ ! -f "$catchall_avail" ]]; then
+    cat >"$catchall_avail" <<'EOF'
+server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+EOF
+  fi
+  ln -sf "$catchall_avail" "$catchall_enabled"
+  if [[ -e /etc/nginx/sites-enabled/default ]]; then
+    local others
+    others=$(find /etc/nginx/sites-enabled -maxdepth 1 -type l ! -name 'default' ! -name '000-catchall.conf' | wc -l)
+    if [[ $others -eq 0 ]]; then
+      rm -f /etc/nginx/sites-enabled/default
+    fi
+  fi
 }
 
 install_mysql() {
@@ -682,7 +737,7 @@ install_stack() {
   install_nginx
   install_mysql
   install_redis
-install_node
+  install_node
   install_composer
 }
 
@@ -779,13 +834,42 @@ clean_flow() {
   info "Cleanup complete"
 }
 
+bootstrap_flow() {
+  info "Starting bootstrap (no sites will be created)"
+  progress_init 8
+  progress_step "Ensuring simai user and base directories"
+  ensure_user
+  mkdir -p "$WWW_ROOT"
+  chown -R "$SIMAI_USER":www-data "$WWW_ROOT"
+  progress_step "Installing base utilities"
+  install_packages
+  progress_step "Installing PHP ${PHP_VERSION}"
+  install_php_stack
+  progress_step "Installing nginx"
+  install_nginx
+  ensure_nginx_catchall_safe
+  progress_step "Installing database server (${MYSQL_FLAVOR})"
+  install_mysql
+  progress_step "Installing redis"
+  install_redis
+  progress_step "Installing Node.js ${NODE_VERSION}"
+  install_node
+  progress_step "Installing Composer"
+  install_composer
+  progress_done "Bootstrap completed"
+}
+
 main() {
   parse_args "$@"
-  ensure_defaults
   require_root
   require_supported_os
   mkdir -p "$(dirname "$LOG_FILE")"
   touch "$LOG_FILE"
+  if [[ $ACTION == "bootstrap" ]]; then
+    bootstrap_flow
+    return
+  fi
+  ensure_defaults
   if [[ $ACTION == "clean" ]]; then
     clean_flow
   else
