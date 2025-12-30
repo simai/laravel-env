@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.30] - 2025-12-30
+### Fixed
+- Fixed bootstrap/install failure where run_long could not execute commands prefixed with env assignments (e.g., DEBIAN_FRONTEND=noninteractive).
+
 ## [0.7.29] - 2025-12-30
 ### Improved
 - Bootstrap and installer long-running steps now show a spinner with elapsed time on interactive terminals while logging to /var/log/simai-env.log, preventing “silent freeze” during apt installs.

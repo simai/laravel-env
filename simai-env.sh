@@ -99,7 +99,11 @@ run_long() {
   local start
   start=$(date +%s)
   info "$desc"
-  "$@" >>"$LOG_FILE" 2>&1 &
+  if command -v env >/dev/null 2>&1; then
+    env "$@" >>"$LOG_FILE" 2>&1 &
+  else
+    "$@" >>"$LOG_FILE" 2>&1 &
+  fi
   local cmd_pid=$!
   local spinner='|/-\\'
   local i=0
