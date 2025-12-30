@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.28] - 2025-12-30
+### Fixed
+- Installer defaults now run bootstrap (packages/services) unless explicitly skipped; scripts-only no longer the default.
+- Installer can auto-open the admin menu even when invoked via `curl | sudo bash` by using /dev/tty and avoids sudo inside bootstrap calls.
+
 ## [0.7.27] - 2025-12-30
 ### Added/Changed
 - Installer now runs a full bootstrap (packages/services) by default and can launch the admin menu; opt out via SIMAI_INSTALL_MODE=scripts or SIMAI_INSTALL_NO_BOOTSTRAP=1.

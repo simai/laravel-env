@@ -3,7 +3,7 @@
 Minimal two-step setup for PHP projects on Ubuntu 20.04/22.04/24.04. No demo sites are created automatically.
 
 ## Quick start (run as root)
-1) Install scripts and base packages:
+1) Install scripts and base packages (auto-opens menu on interactive terminals):
 ```bash
 curl -fsSL https://raw.githubusercontent.com/simai/simai-env/main/install.sh | sudo bash
 ```
