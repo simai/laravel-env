@@ -208,15 +208,17 @@ create_nginx_site() {
   local site_available="/etc/nginx/sites-available/${domain}.conf"
   local site_enabled="/etc/nginx/sites-enabled/${domain}.conf"
   local ssl_flag="off"
+  local backup=""
   [[ -n "$ssl_cert" && -n "$ssl_key" ]] && ssl_flag="on"
   if [[ -f "$site_available" ]]; then
-    local ts backup
+    local ts
     ts=$(date +%Y%m%d%H%M%S)
     backup="${site_available}.bak.${ts}"
     if cp -p "$site_available" "$backup" >>"$LOG_FILE" 2>&1; then
       info "Backed up existing nginx config to ${backup}"
     else
       warn "Failed to backup existing nginx config ${site_available}"
+      backup=""
     fi
   fi
 
@@ -240,18 +242,68 @@ create_nginx_site() {
     rm -f /etc/nginx/sites-enabled/default
   fi
   if [[ -n "$ssl_cert" && -n "$ssl_key" ]]; then
-    perl -0pi -e 'if ($_ !~ /listen 443 ssl;/) { s/^(\\s*listen 80;.*)$/\\1\n    listen 443 ssl;/m }' "$site_available"
-    perl -0pi -e "if ($_ !~ /ssl_certificate /) { s/^(\\s*server_name\\s+.*;)/\\1\\n    ssl_certificate ${ssl_cert};\\n    ssl_certificate_key ${ssl_key};/m }" "$site_available"
-    [[ -n "$ssl_chain" ]] && perl -0pi -e "if ($_ !~ /ssl_trusted_certificate /) { s/^(\\s*ssl_certificate_key.*;)/\\1\\n    ssl_trusted_certificate ${ssl_chain};/m }" "$site_available"
-    if [[ "$ssl_hsts" == "yes" ]]; then
-      perl -0pi -e 's/^}\\s*$//m; print "    add_header Strict-Transport-Security \"max-age=31536000\" always;\\n}\n" unless /Strict-Transport-Security/' "$site_available"
-    fi
-    if [[ "$ssl_redirect" == "yes" ]]; then
-      perl -0pi -e 's/^}\\s*$//m; print "    # simai-ssl-redirect-start\n    if ($scheme != \"https\") { return 301 https://$host$request_uri; }\n    # simai-ssl-redirect-end\n}\n" unless /simai-ssl-redirect/' "$site_available"
-    fi
+    SSL_CERT="$ssl_cert" SSL_KEY="$ssl_key" SSL_CHAIN="$ssl_chain" SSL_HSTS="$ssl_hsts" SSL_REDIRECT="$ssl_redirect" perl -0pi -e '
+      my $cert     = $ENV{SSL_CERT} // "";
+      my $key      = $ENV{SSL_KEY} // "";
+      my $chain    = $ENV{SSL_CHAIN} // "";
+      my $hsts     = lc($ENV{SSL_HSTS} // "no");
+      my $redirect = lc($ENV{SSL_REDIRECT} // "no");
+
+      sub insert_before_closing {
+        my ($block) = @_;
+        my $inserted = 0;
+        $_ =~ s/^(\\s*}\\s*)$/ $inserted=1; "$block\n$1"/egm;
+        if (!$inserted) {
+          $_ .= "\n$block\n";
+        }
+      }
+
+      if ($cert && $key) {
+        if ($_ !~ /listen\\s+443\\s+ssl;/) {
+          if ($_ =~ s/(\\s*listen\\s+80[^\\n]*;\\s*\\n)/$1    listen 443 ssl;\\n/) {
+          } elsif ($_ =~ s/(server_name\\s+.*;\\s*\\n)/$1    listen 443 ssl;\\n/) {
+          } else {
+            insert_before_closing("    listen 443 ssl;");
+          }
+        }
+
+        if ($_ =~ /ssl_certificate\\s+/) {
+          s/(ssl_certificate\\s+).*/${1}$cert;/;
+        } else {
+          insert_before_closing("    ssl_certificate $cert;");
+        }
+
+        if ($_ =~ /ssl_certificate_key\\s+/) {
+          s/(ssl_certificate_key\\s+).*/${1}$key;/;
+        } else {
+          insert_before_closing("    ssl_certificate_key $key;");
+        }
+
+        if (length $chain) {
+          if ($_ =~ /ssl_trusted_certificate\\s+/) {
+            s/(ssl_trusted_certificate\\s+).*/${1}$chain;/;
+          } else {
+            insert_before_closing("    ssl_trusted_certificate $chain;");
+          }
+        }
+
+        if ($hsts eq "yes" && $_ !~ /Strict-Transport-Security/) {
+          insert_before_closing("    add_header Strict-Transport-Security \\\"max-age=31536000\\\" always;");
+        }
+
+        if ($redirect eq "yes" && $_ !~ /simai-ssl-redirect/) {
+          my $block = "    # simai-ssl-redirect-start\n    if (\\$scheme != \\\"https\\\") { return 301 https://\\$host\\$request_uri; }\n    # simai-ssl-redirect-end";
+          insert_before_closing($block);
+        }
+      }
+    ' "$site_available" || { restore_nginx_backup "$site_available" "$site_enabled" "$backup"; return 1; }
   fi
   ensure_nginx_catchall
-  nginx -t >>"$LOG_FILE" 2>&1 || { error "nginx config test failed"; return 1; }
+  if ! nginx -t >>"$LOG_FILE" 2>&1; then
+    error "nginx config test failed"
+    restore_nginx_backup "$site_available" "$site_enabled" "$backup"
+    return 1
+  fi
   systemctl reload nginx >>"$LOG_FILE" 2>&1 || systemctl restart nginx >>"$LOG_FILE" 2>&1 || true
 }
 
@@ -363,6 +415,26 @@ backup_file() {
     else
       warn "Failed to backup ${path}"
     fi
+  fi
+}
+
+restore_nginx_backup() {
+  local site_available="$1" site_enabled="$2" backup="$3"
+  if [[ -n "$backup" && -f "$backup" ]]; then
+    if cp -p "$backup" "$site_available" >>"$LOG_FILE" 2>&1; then
+      info "Restored nginx config from backup ${backup}"
+      ln -sf "$site_available" "$site_enabled"
+      if nginx -t >>"$LOG_FILE" 2>&1; then
+        systemctl reload nginx >>"$LOG_FILE" 2>&1 || systemctl restart nginx >>"$LOG_FILE" 2>&1 || true
+      else
+        warn "nginx config still invalid after restore; check ${site_available}"
+      fi
+    else
+      warn "Failed to restore nginx config from backup ${backup}"
+    fi
+  else
+    rm -f "$site_available" "$site_enabled"
+    warn "Removed generated nginx config due to failure"
   fi
 }
 

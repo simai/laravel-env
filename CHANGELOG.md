@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.23] - 2025-12-30
+### Fixed
+- Robust SSL nginx config injection: safer perl patching with no shell expansion issues for certificate/key paths.
+- ssl letsencrypt/install stop on nginx apply failures and no longer print success when apply fails.
+### Improved
+- Transactional nginx apply restores the previous config on failure to keep nginx valid.
+
 ## [0.7.22] - 2025-12-29
 ### Fixed
 - ssl letsencrypt now reaches certbot for static sites; helpers return success explicitly to avoid false exits under `set -e`.

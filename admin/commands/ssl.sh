@@ -103,6 +103,7 @@ ssl_issue_handler() {
   if ! require_site_exists "$domain"; then
     return 1
   fi
+  progress_step "Checking certbot availability"
   if ! command -v certbot >/dev/null 2>&1; then
     error "certbot is not installed"
     return 1
@@ -126,7 +127,10 @@ ssl_issue_handler() {
   local key="/etc/letsencrypt/live/${domain}/privkey.pem"
   local chain="/etc/letsencrypt/live/${domain}/chain.pem"
   progress_step "Applying nginx SSL configuration (redirect=${redirect}, hsts=${hsts})"
-  ssl_apply_nginx "$domain" "$cert" "$key" "$chain" "$redirect" "$hsts"
+  if ! ssl_apply_nginx "$domain" "$cert" "$key" "$chain" "$redirect" "$hsts"; then
+    error "Failed to apply nginx SSL config for ${domain}. Restored previous config if available."
+    return 1
+  fi
   ensure_certbot_cron
   progress_step "Reloading nginx"
   echo "===== SSL issue summary ====="
@@ -199,6 +203,7 @@ ssl_install_custom_handler() {
     return 1
   fi
 
+  progress_step "Copying certificate and key files"
   progress_step "Preparing SSL directory at ${dest_dir}"
   if [[ "$cert_src" != "$raw_cert_dst" ]]; then
     cp -f "$cert_src" "$raw_cert_dst"
@@ -226,7 +231,10 @@ ssl_install_custom_handler() {
   local chain_arg=""
   [[ -f "$chain_dst" ]] && chain_arg="$chain_dst"
   progress_step "Applying nginx SSL configuration (redirect=${redirect}, hsts=${hsts})"
-  ssl_apply_nginx "$domain" "$cert_dst" "$key_dst" "$chain_arg" "$redirect" "$hsts"
+  if ! ssl_apply_nginx "$domain" "$cert_dst" "$key_dst" "$chain_arg" "$redirect" "$hsts"; then
+    error "Failed to apply nginx SSL config for ${domain}. Restored previous config if available."
+    return 1
+  fi
   progress_step "Reloading nginx"
   echo "===== SSL install summary ====="
   echo "Domain   : ${domain}"
@@ -262,8 +270,9 @@ ssl_renew_handler() {
     return 1
   fi
   ssl_site_context "$domain" || return 1
-  progress_step "Requesting renewal from Let's Encrypt"
+  progress_step "Preparing ACME webroot"
   local webroot="${SITE_SSL_ROOT}/public"
+  progress_step "Requesting renewal from Let's Encrypt"
   if ! certbot certonly --keep-until-expiring --force-renewal --non-interactive --agree-tos --webroot -w "$webroot" -d "$domain" >>"$LOG_FILE" 2>&1; then
     error "Renew failed for ${domain}; see ${LOG_FILE}"
     return 1
