@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.8.4] - 2025-12-31
+### Added
+- Installer prints a retro “SIMAI ENV” banner at startup (interactive terminals only, with safe fallback for narrow/non-UTF-8 environments).
+
 ## [0.8.3] - 2025-12-30
 ### Changed
 - self bootstrap menu label now reads “Repair Environment …” to clarify it repairs/installs the base stack without touching sites.

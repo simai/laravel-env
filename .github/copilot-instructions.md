@@ -69,3 +69,27 @@
 - `docs/admin.md`: admin CLI overview, profiles, menu behavior.
 - `docs/commands/site.md`: site add/remove/list/set-php options/behavior.
 - `docs/commands/php.md`: php list/reload usage.
+
+## Project policies (must follow)
+- Installer/bootstrap MUST NOT create any demo sites (no example.com or similar). After install, the system is ready and the user creates sites explicitly via `simai-admin.sh site add`.
+- Default project directory style is DOMAIN-based:
+  - filesystem path: `/home/simai/www/<domain>` (dots are kept), e.g. `/home/simai/www/env.sf8.ru`
+  - project slug (identifiers, pool/unit names): derived from domain and uses dashes, e.g. `env-sf8-ru`
+
+## Site profiles
+- Add and maintain profile `static`:
+  - No PHP/MySQL prompts on creation; store `php=none` in metadata.
+  - Nginx serves static content from `<root>/public` (index.html by default).
+  - `site remove` for `static` MUST NOT prompt for dropping DB / DB user unless the user explicitly provided flags to do so.
+
+## Self section UX rules
+- In the menu, the command `self bootstrap` must be presented as:
+  "Repair Environment (install/repair base stack without creating sites)"
+  (Command name can remain `bootstrap` for backward compatibility.)
+- `self update` must NOT drop the user to a shell.
+  If a menu reload is required after update, it must be done safely:
+  - do not `exec` into a new menu
+  - on failure, show a warning and keep the current menu running
+
+## Changelog rule
+- CHANGELOG.md must be reverse-chronological: newest version block at the top, older versions below.

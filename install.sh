@@ -11,6 +11,38 @@ if [[ $EUID -ne 0 && "$INSTALL_DIR" == /root/* ]]; then
   exit 1
 fi
 
+print_banner() {
+  if [[ "${SIMAI_INSTALL_NO_BANNER:-0}" == "1" ]]; then
+    return
+  fi
+  if [[ ! -t 1 || ! -r /dev/tty || ! -w /dev/tty ]]; then
+    return
+  fi
+  local cols
+  cols=$(tput cols 2>/dev/null || echo 80)
+  if [[ "$cols" -lt 70 ]]; then
+    echo "SIMAI ENV"
+    echo
+    return
+  fi
+  local charset
+  charset=$(locale charmap 2>/dev/null || echo "UTF-8")
+  if [[ "$charset" != "UTF-8" ]]; then
+    echo "SIMAI ENV"
+    echo
+    return
+  fi
+  cat <<'BANNER'
+███████╗██╗███╗   ███╗ █████╗ ██╗    ███████╗███╗   ██╗██╗   ██╗
+██╔════╝██║████╗ ████║██╔══██╗██║    ██╔════╝████╗  ██║██║   ██║
+███████╗██║██╔████╔██║███████║██║    █████╗  ██╔██╗ ██║██║   ██║
+╚════██║██║██║╚██╔╝██║██╔══██║██║    ██╔══╝  ██║╚██╗██║╚██╗ ██╔╝
+███████║██║██║ ╚═╝ ██║██║  ██║██║    ███████╗██║ ╚████║ ╚████╔╝
+╚══════╝╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝    ╚══════╝╚═╝  ╚═══╝  ╚═══╝
+
+BANNER
+}
+
 check_supported_os() {
   local GREEN="" RED="" RESET=""
   if [[ -t 1 && -r /dev/tty && -w /dev/tty ]]; then
@@ -35,6 +67,7 @@ check_supported_os() {
   exit 1
 }
 
+print_banner
 check_supported_os
 
 TMP_DIR=$(mktemp -d)
